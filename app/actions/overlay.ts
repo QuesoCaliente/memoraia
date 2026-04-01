@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { authFetch } from "@/app/lib/auth-fetch";
 import type { OverlayData } from "@/app/types/overlay";
 
@@ -14,6 +15,8 @@ export async function regenerateOverlayKey(): Promise<ActionResult<OverlayData>>
 
   if (!result.ok) {
     if (result.error.code === "NO_TOKEN" || result.error.code === "UNAUTHORIZED") {
+      const cookieStore = await cookies();
+      cookieStore.delete("token");
       return { ok: false, error: "unauthorized" };
     }
     return { ok: false, error: "server_error" };
@@ -29,6 +32,8 @@ export async function testOverlayRedemption(): Promise<ActionResult<{ connection
 
   if (!result.ok) {
     if (result.error.code === "NO_TOKEN" || result.error.code === "UNAUTHORIZED") {
+      const cookieStore = await cookies();
+      cookieStore.delete("token");
       return { ok: false, error: "unauthorized" };
     }
     return { ok: false, error: "server_error" };

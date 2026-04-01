@@ -31,6 +31,9 @@ export function OverlayPanel({ initialKey, initialUrl }: OverlayPanelProps) {
         setOverlayUrl(result.data.overlayUrl);
       } else if (result.error === "unauthorized") {
         window.location.href = "/";
+      } else {
+        setTestResult("Error al regenerar la key. Intentá de nuevo.");
+        setTimeout(() => setTestResult(null), 5000);
       }
     } finally {
       setRegenerating(false);

@@ -1,5 +1,5 @@
 export default function LoginPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.API_URL;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 px-4">

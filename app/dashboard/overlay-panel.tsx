@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { regenerateOverlayKey, testOverlayRedemption } from "@/app/actions/overlay";
 
 interface OverlayPanelProps {
   initialKey: string;
@@ -24,11 +25,12 @@ export function OverlayPanel({ initialKey, initialUrl }: OverlayPanelProps) {
   async function regenerateKey() {
     setRegenerating(true);
     try {
-      const res = await fetch("/api/overlay/regenerate", { method: "POST" });
-      if (res.ok) {
-        const data = await res.json();
-        setOverlayKey(data.overlayKey);
-        setOverlayUrl(data.overlayUrl);
+      const result = await regenerateOverlayKey();
+      if (result.ok) {
+        setOverlayKey(result.data.overlayKey);
+        setOverlayUrl(result.data.overlayUrl);
+      } else if (result.error === "unauthorized") {
+        window.location.href = "/";
       }
     } finally {
       setRegenerating(false);
@@ -39,14 +41,15 @@ export function OverlayPanel({ initialKey, initialUrl }: OverlayPanelProps) {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch("/api/overlay/test", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
+      const result = await testOverlayRedemption();
+      if (result.ok) {
         setTestResult(
-          data.connections > 0
-            ? `Evento enviado a ${data.connections} overlay(s) activo(s)`
+          result.data.connections > 0
+            ? `Evento enviado a ${result.data.connections} overlay(s) activo(s)`
             : "No hay overlays escuchando. Abrí la URL del overlay primero.",
         );
+      } else if (result.error === "unauthorized") {
+        window.location.href = "/";
       } else {
         setTestResult("Error al enviar evento de test");
       }

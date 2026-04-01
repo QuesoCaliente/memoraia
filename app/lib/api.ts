@@ -1,48 +1,26 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL!;
-
-async function fetchWithAuth(path: string, options?: RequestInit) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) {
-    redirect("/");
-  }
-
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      ...options?.headers,
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (res.status === 401) {
-    redirect("/");
-  }
-
-  return res;
-}
-
-export interface User {
-  userId: string;
-  login: string;
-  displayName: string;
-}
-
-export interface OverlayData {
-  overlayKey: string;
-  overlayUrl: string;
-}
+import { authFetch } from "./auth-fetch";
+import type { User } from "@/app/types/auth";
+import type { OverlayData } from "@/app/types/overlay";
 
 export async function getMe(): Promise<User> {
-  const res = await fetchWithAuth("/auth/me");
-  return res.json();
+  const result = await authFetch<User>("/auth/me");
+  if (!result.ok) {
+    if (result.error.code === "NO_TOKEN" || result.error.code === "UNAUTHORIZED") {
+      redirect("/");
+    }
+    throw new Error(`Failed to fetch user: ${result.error.code}`);
+  }
+  return result.data;
 }
 
 export async function getOverlayKey(): Promise<OverlayData> {
-  const res = await fetchWithAuth("/api/overlay/key");
-  return res.json();
+  const result = await authFetch<OverlayData>("/api/overlay/key");
+  if (!result.ok) {
+    if (result.error.code === "NO_TOKEN" || result.error.code === "UNAUTHORIZED") {
+      redirect("/");
+    }
+    throw new Error(`Failed to fetch overlay key: ${result.error.code}`);
+  }
+  return result.data;
 }

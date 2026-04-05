@@ -30,7 +30,7 @@ export async function authFetch<T>(
       ...options,
       headers: {
         ...options?.headers,
-        Authorization: `Bearer ${token}`,
+        Cookie: `token=${token}`,
       },
     });
 
@@ -48,6 +48,10 @@ export async function authFetch<T>(
         ok: false,
         error: { code: 'BACKEND_ERROR', status: res.status, message },
       };
+    }
+
+    if (res.status === 204) {
+      return { ok: true, data: null as T };
     }
 
     const data: T = await res.json();

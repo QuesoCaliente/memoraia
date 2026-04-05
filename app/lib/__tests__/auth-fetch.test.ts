@@ -49,7 +49,8 @@ describe('authFetch', () => {
     expect(result).toEqual({ ok: true, data: responseData });
     expect(mockFetch).toHaveBeenCalledOnce();
     const [, options] = mockFetch.mock.calls[0];
-    expect(options.headers.Authorization).toBe(`Bearer ${token}`);
+    expect(options.headers.Cookie).toBe(`token=${token}`);
+    expect(options.headers.Authorization).toBeUndefined();
   });
 
   it('returns UNAUTHORIZED when fetch returns 401', async () => {
@@ -104,5 +105,44 @@ describe('authFetch', () => {
       ok: false,
       error: { code: 'BACKEND_ERROR', status: 500, message: errorMessage },
     });
+  });
+
+  it('returns ok with null data when fetch returns 204', async () => {
+    vi.mocked(cookies).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: 'test-token' }),
+    } as any);
+
+    const mockJson = vi.fn();
+    mockFetch.mockResolvedValue({
+      status: 204,
+      ok: true,
+      json: mockJson,
+    });
+
+    const { authFetch } = await import('../auth-fetch');
+    const result = await authFetch('/api/resource');
+
+    expect(result).toEqual({ ok: true, data: null });
+    expect(mockJson).not.toHaveBeenCalled();
+  });
+
+  it('still parses JSON for 200 responses', async () => {
+    vi.mocked(cookies).mockResolvedValue({
+      get: vi.fn().mockReturnValue({ value: 'test-token' }),
+    } as any);
+
+    const responseData = { id: 42 };
+    const mockJson = vi.fn().mockResolvedValue(responseData);
+    mockFetch.mockResolvedValue({
+      status: 200,
+      ok: true,
+      json: mockJson,
+    });
+
+    const { authFetch } = await import('../auth-fetch');
+    const result = await authFetch('/api/resource');
+
+    expect(result).toEqual({ ok: true, data: responseData });
+    expect(mockJson).toHaveBeenCalledOnce();
   });
 });

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getMe, getOverlayKey } from "../lib/api";
 import { OverlayPanel } from "./overlay-panel";
 import { LogoutButton } from "./logout-button";
@@ -22,6 +23,60 @@ export default async function DashboardPage() {
           initialKey={overlay.overlayKey}
           initialUrl={overlay.overlayUrl}
         />
+
+        {user.streamerEnabled && (
+          <Link
+            href="/dashboard/cards"
+            className="block rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center transition-colors hover:bg-zinc-800"
+          >
+            <h2 className="text-lg font-semibold text-white">Manage Cards</h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              Create and manage card categories and templates
+            </p>
+          </Link>
+        )}
+
+        {user.streamerEnabled && (
+          <Link
+            href="/dashboard/battles"
+            className="block rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center transition-colors hover:bg-zinc-800"
+          >
+            <h2 className="text-lg font-semibold text-white">Battles</h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              Create and manage card battles in your stream
+            </p>
+          </Link>
+        )}
+
+        <Link
+          href="/dashboard/inventory"
+          className="block rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center transition-colors hover:bg-zinc-800"
+        >
+          <h2 className="text-lg font-semibold text-white">My Collection</h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            View your card inventory and stats
+          </p>
+        </Link>
+
+        <Link
+          href="/dashboard/missions"
+          className="block rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center transition-colors hover:bg-zinc-800"
+        >
+          <h2 className="text-lg font-semibold text-white">Missions</h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            Complete daily, weekly, and special missions for rewards
+          </p>
+        </Link>
+
+        <Link
+          href="/dashboard/physical-cards"
+          className="block rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center transition-colors hover:bg-zinc-800"
+        >
+          <h2 className="text-lg font-semibold text-white">Physical Cards</h2>
+          <p className="mt-1 text-sm text-zinc-400">
+            Request physical versions of your cards
+          </p>
+        </Link>
 
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
           <h2 className="mb-3 text-lg font-semibold text-white">

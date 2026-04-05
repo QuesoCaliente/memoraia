@@ -1,0 +1,24 @@
+import { getPool } from "@/app/lib/api";
+import { PoolList } from "./pool-list";
+import Link from "next/link";
+
+export default async function PoolPage() {
+  const pool = await getPool();
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-start bg-zinc-950 p-8 text-white">
+      <div className="w-full max-w-3xl space-y-8">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Card Pool</h1>
+          <Link href="/dashboard/cards" className="text-sm text-zinc-400 hover:text-white transition-colors">
+            ← Back to Cards
+          </Link>
+        </div>
+        <p className="text-sm text-zinc-400">
+          Manage system cards in your channel. Toggle cards on/off and set custom drop weights.
+        </p>
+        <PoolList initialEntries={pool.data} />
+      </div>
+    </div>
+  );
+}

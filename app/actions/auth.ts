@@ -41,6 +41,11 @@ export async function logout(): Promise<void> {
     }
   }
 
-  cookieStore.delete("token");
+  const cookieDomain = process.env.COOKIE_DOMAIN;
+  cookieStore.delete({
+    name: "token",
+    path: "/",
+    ...(cookieDomain ? { domain: cookieDomain } : {}),
+  });
   redirect("/");
 }

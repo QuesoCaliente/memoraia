@@ -13,7 +13,7 @@ export function EnableStreamerButton() {
     try {
       const result = await enableStreamer();
       if (result.ok) {
-        window.location.reload();
+        window.location.href = "/api/auth/relogin";
       } else if (result.error === "unauthorized") {
         window.location.href = "/";
       } else {

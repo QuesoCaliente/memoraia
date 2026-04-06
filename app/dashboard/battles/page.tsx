@@ -1,8 +1,10 @@
 import { getBattles } from "@/app/lib/api";
+import { requireStreamer } from "@/app/lib/guards";
 import { BattleList } from "./battle-list";
 import Link from "next/link";
 
 export default async function BattlesPage() {
+  await requireStreamer();
   const battles = await getBattles({ limit: 50 });
 
   return (

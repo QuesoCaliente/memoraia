@@ -1,8 +1,10 @@
 import { getPool } from "@/app/lib/api";
+import { requireStreamer } from "@/app/lib/guards";
 import { PoolList } from "./pool-list";
 import Link from "next/link";
 
 export default async function PoolPage() {
+  await requireStreamer();
   const pool = await getPool();
 
   return (

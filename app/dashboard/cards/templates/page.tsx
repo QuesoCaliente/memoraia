@@ -1,8 +1,10 @@
 import { getTemplates, getCategories } from "@/app/lib/api";
+import { requireStreamer } from "@/app/lib/guards";
 import { TemplateList } from "./template-list";
 import Link from "next/link";
 
 export default async function TemplatesPage() {
+  await requireStreamer();
   const [templatesResponse, categories] = await Promise.all([
     getTemplates(),
     getCategories(),

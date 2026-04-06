@@ -1,8 +1,10 @@
 import { getCategories } from "@/app/lib/api";
+import { requireStreamer } from "@/app/lib/guards";
 import { CategoryList } from "./category-list";
 import Link from "next/link";
 
 export default async function CardsPage() {
+  await requireStreamer();
   const categories = await getCategories();
 
   return (

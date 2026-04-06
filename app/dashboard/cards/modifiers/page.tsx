@@ -1,8 +1,10 @@
 import { getModifiers } from "@/app/lib/api";
+import { requireStreamer } from "@/app/lib/guards";
 import { ModifierGrid } from "./modifier-grid";
 import Link from "next/link";
 
 export default async function ModifiersPage() {
+  await requireStreamer();
   const modifiers = await getModifiers();
 
   return (

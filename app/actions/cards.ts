@@ -17,6 +17,8 @@ import type {
   UpdatePoolEntryPayload,
   TierRarityModifier,
   UpdateModifiersPayload,
+  SimulateDropPayload,
+  SimulateDropResponse,
 } from "@/app/types/cards";
 
 export type ActionResult<T> =
@@ -226,5 +228,28 @@ export async function updateModifiers(
     return { ok: false, error: mapError(result.error) };
   }
   revalidatePath("/dashboard/cards/modifiers");
+  return { ok: true, data: result.data };
+}
+
+export async function simulateDrop(
+  payload: SimulateDropPayload
+): Promise<ActionResult<SimulateDropResponse>> {
+  const result = await authFetch<SimulateDropResponse>("/api/cards/drop/simulate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!result.ok) {
+    if (result.error.code === "NO_TOKEN" || result.error.code === "UNAUTHORIZED") {
+      await clearTokenCookie();
+      return { ok: false, error: "unauthorized" };
+    }
+    if (result.error.code === "BACKEND_ERROR") {
+      if (result.error.status === 403) return { ok: false, error: "forbidden" };
+      if (result.error.status === 404) return { ok: false, error: "user_not_found" };
+      if (result.error.status === 422) return { ok: false, error: "empty_pool" };
+    }
+    return { ok: false, error: "server_error" };
+  }
   return { ok: true, data: result.data };
 }

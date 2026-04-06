@@ -4,7 +4,7 @@ import { CategoryList } from "./category-list";
 import Link from "next/link";
 
 export default async function CardsPage() {
-  await requireStreamer();
+  const user = await requireStreamer();
   const categories = await getCategories();
 
   return (
@@ -37,6 +37,14 @@ export default async function CardsPage() {
         >
           Tier Modifiers →
         </Link>
+        {user.role === "admin" && (
+          <Link
+            href="/dashboard/cards/drop"
+            className="block rounded-md border border-yellow-800 bg-yellow-950 p-4 text-center text-yellow-300 transition-colors hover:bg-yellow-900 hover:text-yellow-200"
+          >
+            Simular Drop →
+          </Link>
+        )}
         <CategoryList initialCategories={categories} />
       </div>
     </div>

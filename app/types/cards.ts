@@ -393,6 +393,23 @@ export interface UpdateMissionPayload {
   isActive?: boolean;
 }
 
+// ── Simulate Drop ───────────────────────────────────────────────────────────
+
+export interface SimulateDropPayload {
+  userId: string;
+  tier?: SubscriptionTier;
+}
+
+export interface SimulateDropResponse {
+  user_card_id: string;
+  template_id: string;
+  template_name: string;
+  rarity: CardRarity;
+  attack: number;
+  defense: number;
+  agility: number;
+}
+
 // ── Physical Cards ───────────────────────────────────────────────────────────
 
 export type PhysicalCardStatus = "pending" | "approved" | "shipped" | "delivered" | "rejected";

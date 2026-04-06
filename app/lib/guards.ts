@@ -22,3 +22,11 @@ export async function requireAdmin(): Promise<User> {
   }
   return user;
 }
+
+export async function requireAdminStreamer(): Promise<User> {
+  const user = await requireAuth();
+  if (user.role !== "admin" || !user.streamerEnabled) {
+    redirect("/dashboard");
+  }
+  return user;
+}

@@ -25,17 +25,18 @@ export async function enableStreamer(): Promise<ActionResult<EnableStreamerRespo
 }
 
 export async function logout(): Promise<void> {
-  try {
-    await authFetch("/auth/logout", { method: "POST" });
-  } catch {
-    // Backend unreachable — still clear local cookie
-  }
+  // Backend clears the httpOnly cookie it originally set
+  await authFetch("/auth/logout", { method: "POST" });
 
+  // Also clear from Next.js side as fallback
   const cookieStore = await cookies();
   const cookieDomain = process.env.COOKIE_DOMAIN;
-  cookieStore.delete({
-    name: "token",
+  cookieStore.set("token", "", {
     path: "/",
+    maxAge: 0,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     ...(cookieDomain ? { domain: cookieDomain } : {}),
   });
   redirect("/");

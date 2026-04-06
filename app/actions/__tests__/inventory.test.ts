@@ -11,6 +11,14 @@ vi.mock("next/headers", () => ({
   cookies: vi.fn(),
 }));
 
+const mockRedirect = vi.fn();
+vi.mock("next/navigation", () => ({
+  redirect: (...args: unknown[]) => {
+    mockRedirect(...args);
+    throw new Error("NEXT_REDIRECT");
+  },
+}));
+
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { authFetch } from "@/app/lib/auth-fetch";
@@ -93,13 +101,14 @@ describe("fuseCards()", () => {
     vi.resetModules();
     vi.mocked(revalidatePath).mockReset();
     vi.mocked(authFetch).mockReset();
+    mockRedirect.mockReset();
   });
 
   it("success: returns { ok: true, data: FuseResponse } and revalidates /dashboard/inventory", async () => {
     vi.mocked(authFetch).mockResolvedValue({ ok: true, data: mockFuseResponse });
     makeCookieMock();
 
-    const { fuseCards } = await import("../inventory");
+    const { fuseCards } = await import("../fusion");
     const result = await fuseCards({ targetCardId: "card-1", materialCardIds: ["card-2", "card-3"] });
 
     expect(result).toEqual({ ok: true, data: mockFuseResponse });
@@ -114,18 +123,20 @@ describe("fuseCards()", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard/inventory");
   });
 
-  it("NO_TOKEN: deletes cookie and returns { ok: false, error: 'unauthorized' }", async () => {
+  it("NO_TOKEN: deletes cookie and redirects to /", async () => {
     vi.mocked(authFetch).mockResolvedValue({
       ok: false,
       error: { code: "NO_TOKEN" },
     });
     const { mockDelete } = makeCookieMock();
 
-    const { fuseCards } = await import("../inventory");
-    const result = await fuseCards({ targetCardId: "card-1", materialCardIds: ["card-2"] });
+    const { fuseCards } = await import("../fusion");
+    await expect(
+      fuseCards({ targetCardId: "card-1", materialCardIds: ["card-2"] })
+    ).rejects.toThrow("NEXT_REDIRECT");
 
-    expect(result).toEqual({ ok: false, error: "unauthorized" });
     expect(mockDelete).toHaveBeenCalledWith("token");
+    expect(mockRedirect).toHaveBeenCalledWith("/");
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
@@ -136,7 +147,7 @@ describe("fuseCards()", () => {
     });
     makeCookieMock();
 
-    const { fuseCards } = await import("../inventory");
+    const { fuseCards } = await import("../fusion");
     const result = await fuseCards({ targetCardId: "card-1", materialCardIds: ["card-2"] });
 
     expect(result).toEqual({ ok: false, error: "forbidden" });
@@ -150,7 +161,7 @@ describe("fuseCards()", () => {
     });
     makeCookieMock();
 
-    const { fuseCards } = await import("../inventory");
+    const { fuseCards } = await import("../fusion");
     const result = await fuseCards({ targetCardId: "card-1", materialCardIds: ["card-2"] });
 
     expect(result).toEqual({ ok: false, error: "invalid_fusion" });
@@ -164,7 +175,7 @@ describe("fuseCards()", () => {
     });
     makeCookieMock();
 
-    const { fuseCards } = await import("../inventory");
+    const { fuseCards } = await import("../fusion");
     const result = await fuseCards({ targetCardId: "card-1", materialCardIds: ["card-2"] });
 
     expect(result).toEqual({ ok: false, error: "conflict" });
@@ -172,21 +183,22 @@ describe("fuseCards()", () => {
   });
 });
 
-// ─── destroyForDust ───────────────────────────────────────────────────────────
+// ─── destroyCardForDust ───────────────────────────────────────────────────────────
 
-describe("destroyForDust()", () => {
+describe("destroyCardForDust()", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.mocked(revalidatePath).mockReset();
     vi.mocked(authFetch).mockReset();
+    mockRedirect.mockReset();
   });
 
   it("success: returns { ok: true, data: DestroyForDustResponse } and revalidates /dashboard/inventory", async () => {
     vi.mocked(authFetch).mockResolvedValue({ ok: true, data: mockDestroyForDustResponse });
     makeCookieMock();
 
-    const { destroyForDust } = await import("../inventory");
-    const result = await destroyForDust("card-1");
+    const { destroyCardForDust } = await import("../fusion");
+    const result = await destroyCardForDust("card-1");
 
     expect(result).toEqual({ ok: true, data: mockDestroyForDustResponse });
     expect(authFetch).toHaveBeenCalledWith(
@@ -200,32 +212,32 @@ describe("destroyForDust()", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard/inventory");
   });
 
-  it("UNAUTHORIZED: deletes cookie and returns { ok: false, error: 'unauthorized' }", async () => {
+  it("UNAUTHORIZED: deletes cookie and redirects to /", async () => {
     vi.mocked(authFetch).mockResolvedValue({
       ok: false,
       error: { code: "UNAUTHORIZED", status: 401 },
     });
     const { mockDelete } = makeCookieMock();
 
-    const { destroyForDust } = await import("../inventory");
-    const result = await destroyForDust("card-1");
+    const { destroyCardForDust } = await import("../fusion");
+    await expect(destroyCardForDust("card-1")).rejects.toThrow("NEXT_REDIRECT");
 
-    expect(result).toEqual({ ok: false, error: "unauthorized" });
     expect(mockDelete).toHaveBeenCalledWith("token");
+    expect(mockRedirect).toHaveBeenCalledWith("/");
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("BACKEND_ERROR (422): returns { ok: false, error: 'undestroyable' }", async () => {
+  it("BACKEND_ERROR (422): returns { ok: false, error: 'invalid_fusion' }", async () => {
     vi.mocked(authFetch).mockResolvedValue({
       ok: false,
       error: { code: "BACKEND_ERROR", status: 422, message: "Card cannot be destroyed" },
     });
     makeCookieMock();
 
-    const { destroyForDust } = await import("../inventory");
-    const result = await destroyForDust("card-1");
+    const { destroyCardForDust } = await import("../fusion");
+    const result = await destroyCardForDust("card-1");
 
-    expect(result).toEqual({ ok: false, error: "undestroyable" });
+    expect(result).toEqual({ ok: false, error: "invalid_fusion" });
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 });
@@ -237,13 +249,14 @@ describe("craftCard()", () => {
     vi.resetModules();
     vi.mocked(revalidatePath).mockReset();
     vi.mocked(authFetch).mockReset();
+    mockRedirect.mockReset();
   });
 
   it("success: returns { ok: true, data: CraftCardResponse } and revalidates /dashboard/inventory", async () => {
     vi.mocked(authFetch).mockResolvedValue({ ok: true, data: mockCraftCardResponse });
     makeCookieMock();
 
-    const { craftCard } = await import("../inventory");
+    const { craftCard } = await import("../fusion");
     const result = await craftCard("t-2");
 
     expect(result).toEqual({ ok: true, data: mockCraftCardResponse });
@@ -258,17 +271,17 @@ describe("craftCard()", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/dashboard/inventory");
   });
 
-  it("BACKEND_ERROR (422): returns { ok: false, error: 'craft_failed' }", async () => {
+  it("BACKEND_ERROR (422): returns { ok: false, error: 'invalid_fusion' }", async () => {
     vi.mocked(authFetch).mockResolvedValue({
       ok: false,
       error: { code: "BACKEND_ERROR", status: 422, message: "Insufficient dust" },
     });
     makeCookieMock();
 
-    const { craftCard } = await import("../inventory");
+    const { craftCard } = await import("../fusion");
     const result = await craftCard("t-2");
 
-    expect(result).toEqual({ ok: false, error: "craft_failed" });
+    expect(result).toEqual({ ok: false, error: "invalid_fusion" });
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
@@ -279,7 +292,7 @@ describe("craftCard()", () => {
     });
     makeCookieMock();
 
-    const { craftCard } = await import("../inventory");
+    const { craftCard } = await import("../fusion");
     const result = await craftCard("t-2");
 
     expect(result).toEqual({ ok: false, error: "not_found" });

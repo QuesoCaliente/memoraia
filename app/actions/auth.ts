@@ -9,8 +9,6 @@ type ActionResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
-const API_URL = process.env.API_URL!;
-
 export async function enableStreamer(): Promise<ActionResult<EnableStreamerResponse>> {
   const result = await authFetch<EnableStreamerResponse>("/auth/me/enable-streamer", {
     method: "POST",
@@ -27,20 +25,13 @@ export async function enableStreamer(): Promise<ActionResult<EnableStreamerRespo
 }
 
 export async function logout(): Promise<void> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (token) {
-    try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: "POST",
-        headers: { Cookie: `token=${token}` },
-      });
-    } catch {
-      // Backend unreachable — still clear local cookie
-    }
+  try {
+    await authFetch("/auth/logout", { method: "POST" });
+  } catch {
+    // Backend unreachable — still clear local cookie
   }
 
+  const cookieStore = await cookies();
   const cookieDomain = process.env.COOKIE_DOMAIN;
   cookieStore.delete({
     name: "token",

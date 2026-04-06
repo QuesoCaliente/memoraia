@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('server-only', () => ({}));
+
 vi.mock('next/headers', () => ({
   cookies: vi.fn(),
 }));
@@ -8,87 +10,81 @@ vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
 }));
 
+vi.mock('@/app/lib/auth-fetch', () => ({
+  authFetch: vi.fn(),
+}));
+
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { authFetch } from '@/app/lib/auth-fetch';
 
 describe('logout()', () => {
-  let mockFetch: ReturnType<typeof vi.fn>;
   let mockDelete: ReturnType<typeof vi.fn>;
-  let mockGet: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    process.env.API_URL = 'http://localhost:3001';
-    mockFetch = vi.fn();
-    vi.stubGlobal('fetch', mockFetch);
+    vi.resetModules();
     mockDelete = vi.fn();
-    mockGet = vi.fn();
     vi.mocked(cookies).mockResolvedValue({
-      get: mockGet,
+      get: vi.fn(),
       delete: mockDelete,
     } as any);
-    // redirect throws a special Next.js error to interrupt execution — simulate that
     vi.mocked(redirect).mockImplementation(() => {
       throw new Error('NEXT_REDIRECT');
     });
-    vi.clearAllMocks();
-    // re-apply redirect mock after clearAllMocks
-    vi.mocked(redirect).mockImplementation(() => {
-      throw new Error('NEXT_REDIRECT');
+    vi.mocked(authFetch).mockReset();
+  });
+
+  it('calls backend logout via authFetch, deletes cookie, and redirects to /', async () => {
+    vi.mocked(authFetch).mockResolvedValue({ ok: true, data: null });
+
+    const { logout } = await import('../auth');
+    await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(authFetch).toHaveBeenCalledWith('/auth/logout', { method: 'POST' });
+    expect(mockDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'token', path: '/' })
+    );
+    expect(redirect).toHaveBeenCalledWith('/');
+  });
+
+  it('still deletes cookie and redirects when authFetch returns error', async () => {
+    vi.mocked(authFetch).mockResolvedValue({
+      ok: false,
+      error: { code: 'BACKEND_ERROR', status: 500, message: 'Internal' },
     });
-  });
-
-  it('calls backend logout, deletes cookie, and redirects to / on 200', async () => {
-    const token = 'my-session-token';
-    mockGet.mockReturnValue({ value: token });
-    mockFetch.mockResolvedValue({ status: 200, ok: true });
 
     const { logout } = await import('../auth');
-
     await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockFetch).toHaveBeenCalledOnce();
-    const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toBe('http://localhost:3001/auth/logout');
-    expect(options.method).toBe('POST');
-    expect(options.headers.Cookie).toBe(`token=${token}`);
-
-    expect(mockDelete).toHaveBeenCalledWith('token');
+    expect(mockDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'token', path: '/' })
+    );
     expect(redirect).toHaveBeenCalledWith('/');
   });
 
-  it('still deletes cookie and redirects when backend returns 500', async () => {
-    mockGet.mockReturnValue({ value: 'some-token' });
-    mockFetch.mockResolvedValue({ status: 500, ok: false });
+  it('still deletes cookie and redirects when authFetch throws', async () => {
+    vi.mocked(authFetch).mockRejectedValue(new TypeError('Failed to fetch'));
 
     const { logout } = await import('../auth');
-
     await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockDelete).toHaveBeenCalledWith('token');
+    expect(mockDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'token', path: '/' })
+    );
     expect(redirect).toHaveBeenCalledWith('/');
   });
 
-  it('skips backend fetch but still deletes cookie and redirects when no token', async () => {
-    mockGet.mockReturnValue(undefined);
+  it('includes COOKIE_DOMAIN in delete when env is set', async () => {
+    process.env.COOKIE_DOMAIN = '.memoraia.gg';
+    vi.mocked(authFetch).mockResolvedValue({ ok: true, data: null });
 
     const { logout } = await import('../auth');
-
     await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockFetch).not.toHaveBeenCalled();
-    expect(mockDelete).toHaveBeenCalledWith('token');
-    expect(redirect).toHaveBeenCalledWith('/');
-  });
+    expect(mockDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'token', path: '/', domain: '.memoraia.gg' })
+    );
 
-  it('still deletes cookie and redirects when fetch throws a network error', async () => {
-    mockGet.mockReturnValue({ value: 'some-token' });
-    mockFetch.mockRejectedValue(new TypeError('Failed to fetch'));
-
-    const { logout } = await import('../auth');
-
-    await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
-
-    expect(mockDelete).toHaveBeenCalledWith('token');
-    expect(redirect).toHaveBeenCalledWith('/');
+    delete process.env.COOKIE_DOMAIN;
   });
 });

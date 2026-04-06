@@ -8,6 +8,7 @@ import type {
   FusePayload,
   FuseResponse,
   DestroyForDustResponse,
+  CraftCardResponse,
 } from "@/app/types/cards";
 
 export type ActionResult<T> =
@@ -62,9 +63,33 @@ export async function destroyCardForDust(
   cardId: string
 ): Promise<ActionResult<DestroyForDustResponse>> {
   const result = await authFetch<DestroyForDustResponse>(
-    `/api/cards/inventory/${cardId}/destroy`,
-    { method: "POST" }
+    "/api/cards/dust/destroy",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cardId }),
+    }
   );
+  if (!result.ok) {
+    if (result.error.code === "NO_TOKEN" || result.error.code === "UNAUTHORIZED") {
+      await clearTokenCookie();
+      redirect("/");
+    }
+    return { ok: false, error: mapError(result.error) };
+  }
+  revalidatePath("/dashboard/inventory");
+  revalidatePath("/dashboard/inventory/dust");
+  return { ok: true, data: result.data };
+}
+
+export async function craftCard(
+  templateId: string
+): Promise<ActionResult<CraftCardResponse>> {
+  const result = await authFetch<CraftCardResponse>("/api/cards/dust/craft", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ templateId }),
+  });
   if (!result.ok) {
     if (result.error.code === "NO_TOKEN" || result.error.code === "UNAUTHORIZED") {
       await clearTokenCookie();

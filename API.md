@@ -957,6 +957,55 @@ Consume las `materialCardIds` (destruidas permanentemente) y transfiere XP a `ta
 
 ---
 
+## Simular Drop de Carta
+
+### Simular drop
+
+```
+POST /api/cards/drop/simulate
+Auth: Cookie token (requireAuth — admin + streamerEnabled)
+Content-Type: application/json
+```
+
+Simula un drop de carta a un usuario específico sin necesidad de una suscripción real de Twitch. Solo disponible para usuarios con rol `admin` Y `streamerEnabled: true`.
+
+**Body**:
+```json
+{
+  "userId": "uuid-del-usuario-que-recibe-la-carta",
+  "tier": "1000"
+}
+```
+
+| Campo    | Tipo          | Requerido | Default  | Descripción                                  |
+|----------|---------------|-----------|----------|----------------------------------------------|
+| `userId` | string (UUID) | sí        | —        | ID del usuario que recibirá la carta         |
+| `tier`   | string        | no        | `"1000"` | Tier de suscripción: `"1000"`, `"2000"` o `"3000"` |
+
+El tier afecta los pesos de drop si el streamer tiene `tier_rarity_modifiers` configurados.
+
+**Response** `201`:
+```json
+{
+  "user_card_id": "uuid",
+  "template_id": "uuid",
+  "template_name": "El Gran Pepe",
+  "rarity": "rare",
+  "attack": 52,
+  "defense": 41,
+  "agility": 33
+}
+```
+
+**Errors**:
+- `403` — el caller no es admin o no tiene streamer habilitado
+- `404` — el `userId` no existe en la tabla `users`
+- `422` — el streamer no tiene templates en su pool (pool vacío o sin templates elegibles)
+
+**Requisitos previos**: el streamer (caller) debe tener al menos un card template activo o entradas habilitadas en su channel_card_pool.
+
+---
+
 ## Dust Economy
 
 ### Destruir carta por dust

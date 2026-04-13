@@ -6,8 +6,7 @@ export default async function SimulateDropPage() {
   await requireAdminStreamer();
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-start bg-zinc-950 p-8 text-white">
-      <div className="w-full max-w-lg space-y-8">
+    <div className="mx-auto w-full max-w-lg space-y-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Simular Drop</h1>
           <Link
@@ -23,7 +22,6 @@ export default async function SimulateDropPage() {
           modificadores configurados.
         </p>
         <SimulateDropForm />
-      </div>
     </div>
   );
 }

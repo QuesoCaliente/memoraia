@@ -63,7 +63,7 @@ export function OverlayPanel({ initialKey, initialUrl }: OverlayPanelProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+    <div className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold text-white">Overlay</h2>
 
       <div className="flex flex-col gap-2">

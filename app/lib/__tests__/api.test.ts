@@ -16,8 +16,7 @@ vi.mock('../auth-fetch', () => ({
 
 import { authFetch } from '../auth-fetch';
 import type { AuthResult } from '../auth-fetch';
-import type { User } from '@/app/types/auth';
-import type { EnableStreamerResponse } from '@/app/types/auth';
+import type { User, EnableStreamerResponse, TwitchReward } from '@/app/types/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type {
@@ -58,6 +57,7 @@ describe('updateProfile()', () => {
       streamerEnabled: false,
       streamerBio: null,
       streamerSlug: null,
+      cardDropRewardId: null,
       dust: 0,
     };
     vi.mocked(authFetch).mockResolvedValue({ ok: true, data: user });
@@ -925,5 +925,57 @@ describe('getMyPhysicalCards()', () => {
     const { getMyPhysicalCards } = await import('../api');
     await expect(getMyPhysicalCards()).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/');
+  });
+});
+
+describe('getRewards()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(cookies).mockResolvedValue({
+      delete: vi.fn(),
+    } as any);
+  });
+
+  it('success: calls /api/rewards and returns array of TwitchReward', async () => {
+    const rewards: TwitchReward[] = [
+      {
+        id: 'r-1',
+        title: 'Card Drop',
+        cost: 100,
+        isEnabled: true,
+        image: null,
+      },
+    ];
+    vi.mocked(authFetch).mockResolvedValue({ ok: true, data: rewards });
+
+    const { getRewards } = await import('../api');
+    const result = await getRewards();
+
+    expect(authFetch).toHaveBeenCalledWith('/api/rewards');
+    expect(result).toEqual(rewards);
+  });
+
+  it('returns empty array when authFetch returns error', async () => {
+    vi.mocked(authFetch).mockResolvedValue({
+      ok: false,
+      error: { code: 'BACKEND_ERROR', status: 500, message: 'Internal Server Error' },
+    });
+
+    const { getRewards } = await import('../api');
+    const result = await getRewards();
+
+    expect(result).toEqual([]);
+  });
+
+  it('returns empty array when authFetch returns NO_TOKEN', async () => {
+    vi.mocked(authFetch).mockResolvedValue({
+      ok: false,
+      error: { code: 'NO_TOKEN' },
+    });
+
+    const { getRewards } = await import('../api');
+    const result = await getRewards();
+
+    expect(result).toEqual([]);
   });
 });

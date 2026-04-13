@@ -26,7 +26,11 @@ export async function enableStreamer(): Promise<ActionResult<EnableStreamerRespo
 
 export async function logout(): Promise<void> {
   // Backend clears the httpOnly cookie it originally set
-  await authFetch("/auth/logout", { method: "POST" });
+  try {
+    await authFetch("/auth/logout", { method: "POST" });
+  } catch {
+    // Continue with local cleanup even if backend is unreachable
+  }
 
   // Also clear from Next.js side as fallback
   const cookieStore = await cookies();

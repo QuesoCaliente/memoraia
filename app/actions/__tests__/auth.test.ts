@@ -19,14 +19,14 @@ import { redirect } from 'next/navigation';
 import { authFetch } from '@/app/lib/auth-fetch';
 
 describe('logout()', () => {
-  let mockDelete: ReturnType<typeof vi.fn>;
+  let mockSet: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.resetModules();
-    mockDelete = vi.fn();
+    mockSet = vi.fn();
     vi.mocked(cookies).mockResolvedValue({
       get: vi.fn(),
-      delete: mockDelete,
+      set: mockSet,
     } as any);
     vi.mocked(redirect).mockImplementation(() => {
       throw new Error('NEXT_REDIRECT');
@@ -41,9 +41,7 @@ describe('logout()', () => {
     await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
 
     expect(authFetch).toHaveBeenCalledWith('/auth/logout', { method: 'POST' });
-    expect(mockDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'token', path: '/' })
-    );
+    expect(mockSet).toHaveBeenCalledWith('token', '', expect.objectContaining({ path: '/', maxAge: 0 }));
     expect(redirect).toHaveBeenCalledWith('/');
   });
 
@@ -56,9 +54,7 @@ describe('logout()', () => {
     const { logout } = await import('../auth');
     await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'token', path: '/' })
-    );
+    expect(mockSet).toHaveBeenCalledWith('token', '', expect.objectContaining({ path: '/', maxAge: 0 }));
     expect(redirect).toHaveBeenCalledWith('/');
   });
 
@@ -68,9 +64,7 @@ describe('logout()', () => {
     const { logout } = await import('../auth');
     await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'token', path: '/' })
-    );
+    expect(mockSet).toHaveBeenCalledWith('token', '', expect.objectContaining({ path: '/', maxAge: 0 }));
     expect(redirect).toHaveBeenCalledWith('/');
   });
 
@@ -81,9 +75,7 @@ describe('logout()', () => {
     const { logout } = await import('../auth');
     await expect(logout()).rejects.toThrow('NEXT_REDIRECT');
 
-    expect(mockDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ name: 'token', path: '/', domain: '.memoraia.gg' })
-    );
+    expect(mockSet).toHaveBeenCalledWith('token', '', expect.objectContaining({ path: '/', maxAge: 0, domain: '.memoraia.gg' }));
 
     delete process.env.COOKIE_DOMAIN;
   });

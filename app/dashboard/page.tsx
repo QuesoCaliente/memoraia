@@ -54,6 +54,18 @@ export default async function DashboardPage() {
           </Link>
         )}
 
+        {user.streamerEnabled && (
+          <Link
+            href="/dashboard/settings"
+            className="block rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center transition-colors hover:bg-zinc-800"
+          >
+            <h2 className="text-lg font-semibold text-white">Settings</h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              Update your profile and configure card drop rewards
+            </p>
+          </Link>
+        )}
+
         <Link
           href="/dashboard/inventory"
           className="block rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center transition-colors hover:bg-zinc-800"

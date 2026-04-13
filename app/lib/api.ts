@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { authFetch } from "./auth-fetch";
 import type { AuthResult } from "./auth-fetch";
-import type { User, UpdateProfilePayload, EnableStreamerResponse } from "@/app/types/auth";
+import type { User, UpdateProfilePayload, EnableStreamerResponse, TwitchReward } from "@/app/types/auth";
 import type { OverlayData } from "@/app/types/overlay";
 import type {
   CardCategory,
@@ -268,6 +268,12 @@ export async function getMyMissions(filters?: UserMissionFilters): Promise<UserM
     }
     throw new Error(`Failed to fetch my missions: ${result.error.code}`);
   }
+  return result.data;
+}
+
+export async function getRewards(): Promise<TwitchReward[]> {
+  const result = await authFetch<TwitchReward[]>("/api/rewards");
+  if (!result.ok) return [];
   return result.data;
 }
 

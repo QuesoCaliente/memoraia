@@ -8,6 +8,7 @@ export interface User {
   streamerEnabled: boolean;
   streamerBio: string | null;
   streamerSlug: string | null;
+  cardDropRewardId: string | null;
   dust: number;
 }
 
@@ -16,7 +17,16 @@ export type UpdateProfilePayload = {
   displayName?: string;
   streamerBio?: string;
   streamerSlug?: string;
-} & ({ displayName: string } | { streamerBio: string } | { streamerSlug: string });
+  cardDropRewardId?: string | null;
+} & ({ displayName: string } | { streamerBio: string } | { streamerSlug: string } | { cardDropRewardId: string | null });
+
+export interface TwitchReward {
+  id: string;
+  title: string;
+  cost: number;
+  isEnabled: boolean;
+  image: string | null;
+}
 
 /** Response from POST /auth/me/enable-streamer */
 export interface EnableStreamerResponse {

@@ -30,7 +30,7 @@ export default async function DashboardPage() {
         {/* Collection — large, spans 2 cols */}
         <Link
           href="/dashboard/inventory"
-          className="group row-span-2 flex flex-col justify-end rounded-2xl border border-zinc-800 p-8 transition-colors hover:border-zinc-700 md:col-span-2"
+          className="group row-span-2 flex flex-col justify-end rounded-2xl border border-[#292929] bg-[#0c0c0d] p-8 transition-colors hover:border-zinc-600 md:col-span-2"
         >
           <h2 className="text-2xl font-bold text-white md:text-3xl">
             Mi <span className="text-blue-400">Colección</span>
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
         {/* Missions */}
         <Link
           href="/dashboard/missions"
-          className="group flex flex-col justify-end rounded-2xl border border-zinc-800 p-8 transition-colors hover:border-zinc-700"
+          className="group flex flex-col justify-end rounded-2xl border border-[#292929] bg-[#0c0c0d] p-8 transition-colors hover:border-zinc-600"
         >
           <h2 className="text-xl font-bold text-white">
             <span className="text-blue-400">Misiones</span>
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
         {/* Physical Cards */}
         <Link
           href="/dashboard/physical-cards"
-          className="group flex flex-col justify-end rounded-2xl border border-zinc-800 p-8 transition-colors hover:border-zinc-700"
+          className="group flex flex-col justify-end rounded-2xl border border-[#292929] bg-[#0c0c0d] p-8 transition-colors hover:border-zinc-600"
         >
           <h2 className="text-xl font-bold text-white">
             Cartas <span className="text-blue-400">Físicas</span>
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
             {/* Manage Cards — large */}
             <Link
               href="/dashboard/cards"
-              className="group flex flex-col justify-end rounded-2xl border border-zinc-800 p-8 transition-colors hover:border-zinc-700 md:col-span-2"
+              className="group flex flex-col justify-end rounded-2xl border border-[#292929] bg-[#0c0c0d] p-8 transition-colors hover:border-zinc-600 md:col-span-2"
             >
               <h2 className="text-2xl font-bold text-white">
                 Gestionar <span className="text-blue-400">Cartas</span>
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
             {/* Battles */}
             <Link
               href="/dashboard/battles"
-              className="group flex flex-col justify-end rounded-2xl border border-zinc-800 p-8 transition-colors hover:border-zinc-700"
+              className="group flex flex-col justify-end rounded-2xl border border-[#292929] bg-[#0c0c0d] p-8 transition-colors hover:border-zinc-600"
             >
               <h2 className="text-xl font-bold text-white">
                 <span className="text-blue-400">Batallas</span>
@@ -97,7 +97,7 @@ export default async function DashboardPage() {
 
             {/* Overlay */}
             {overlay && (
-              <div className="rounded-2xl border border-zinc-800 p-8 md:col-span-2">
+              <div className="rounded-2xl border border-[#292929] bg-[#0c0c0d] p-8 md:col-span-2">
                 <OverlayPanel
                   initialKey={overlay.overlayKey}
                   initialUrl={overlay.overlayUrl}
@@ -108,7 +108,7 @@ export default async function DashboardPage() {
             {/* Settings */}
             <Link
               href="/dashboard/settings"
-              className="group flex flex-col justify-end rounded-2xl border border-zinc-800 p-8 transition-colors hover:border-zinc-700"
+              className="group flex flex-col justify-end rounded-2xl border border-[#292929] bg-[#0c0c0d] p-8 transition-colors hover:border-zinc-600"
             >
               <h2 className="text-xl font-bold text-white">
                 <span className="text-blue-400">Ajustes</span>

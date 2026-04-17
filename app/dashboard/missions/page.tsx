@@ -1,6 +1,5 @@
 import { getMissions, getMyMissions } from "@/app/lib/api";
 import { MissionBoard } from "./mission-board";
-import Link from "next/link";
 
 export default async function MissionsPage() {
   const [missions, myMissions] = await Promise.all([
@@ -10,15 +9,7 @@ export default async function MissionsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Missions</h1>
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-400 hover:text-white transition-colors"
-        >
-          ← Back to Dashboard
-        </Link>
-      </div>
+      <h1 className="text-2xl font-bold text-foreground">Missions</h1>
       <MissionBoard missions={missions.data} myMissions={myMissions.data} />
     </div>
   );

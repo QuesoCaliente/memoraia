@@ -3,21 +3,24 @@
 import { useRef, useState } from "react";
 import { updateModifiers } from "@/app/actions/cards";
 import type { CardRarity, SubscriptionTier, TierRarityModifier } from "@/app/types/cards";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { RARITIES, RARITY_CONFIG } from "@/lib/rarity";
 
-const RARITIES: CardRarity[] = ["common", "uncommon", "rare", "epic", "legendary"];
 const TIERS: SubscriptionTier[] = ["1000", "2000", "3000"];
 const TIER_LABELS: Record<SubscriptionTier, string> = {
   "1000": "Tier 1",
   "2000": "Tier 2",
   "3000": "Tier 3",
-};
-
-const RARITY_LABEL_CLASS: Record<CardRarity, string> = {
-  common: "text-zinc-300",
-  uncommon: "text-green-400",
-  rare: "text-blue-400",
-  epic: "text-purple-400",
-  legendary: "text-amber-400",
 };
 
 type Grid = Record<CardRarity, Record<SubscriptionTier, number>>;
@@ -107,78 +110,71 @@ export function ModifierGrid({ initialModifiers }: ModifierGridProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-x-auto rounded-lg border border-zinc-800">
-        <table className="w-full border-collapse bg-zinc-900 text-sm">
-          <thead>
-            <tr className="border-b border-zinc-800">
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="rounded-xl border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Rarity
-              </th>
+              </TableHead>
               {TIERS.map((tier) => (
-                <th
+                <TableHead
                   key={tier}
-                  className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-zinc-400"
+                  className="text-center text-xs font-semibold uppercase tracking-wider text-foreground"
                 >
                   {TIER_LABELS[tier]}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {RARITIES.map((rarity, idx) => (
-              <tr
-                key={rarity}
-                className={idx < RARITIES.length - 1 ? "border-b border-zinc-800" : ""}
-              >
-                <td className={`px-4 py-3 font-medium capitalize ${RARITY_LABEL_CLASS[rarity]}`}>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {RARITIES.map((rarity) => (
+              <TableRow key={rarity}>
+                <TableCell
+                  className={`font-medium capitalize ${RARITY_CONFIG[rarity].text}`}
+                >
                   {rarity}
-                </td>
+                </TableCell>
                 {TIERS.map((tier) => (
-                  <td key={tier} className="px-4 py-3 text-center">
-                    <input
+                  <TableCell key={tier} className="text-center">
+                    <Input
                       type="number"
                       step="0.1"
                       min="0"
                       value={grid[rarity][tier]}
                       disabled={pending}
-                      className="w-20 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 text-center text-sm text-white focus:border-zinc-500 focus:outline-none disabled:opacity-50"
+                      className="w-20 text-center mx-auto"
                       onChange={(e) => handleChange(rarity, tier, e.target.value)}
                     />
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {error && (
-        <p className="rounded-md border border-red-800 bg-red-950 px-3 py-2 text-sm text-red-400">
-          {error}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {success && (
-        <p className="rounded-md border border-green-800 bg-green-950 px-3 py-2 text-sm text-green-400">
-          Modifiers saved successfully.
-        </p>
+        <Alert>
+          <AlertDescription className="text-green-600 dark:text-green-400">
+            Modifiers saved successfully.
+          </AlertDescription>
+        </Alert>
       )}
 
       <div className="flex items-center gap-3">
-        <button
-          onClick={handleSave}
-          disabled={pending}
-          className="rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900 transition-colors hover:bg-white disabled:opacity-50"
-        >
+        <Button onClick={handleSave} disabled={pending}>
           {pending ? "Saving…" : "Save Changes"}
-        </button>
-        <button
-          onClick={handleReset}
-          disabled={pending}
-          className="rounded-md border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:opacity-50"
-        >
+        </Button>
+        <Button variant="outline" onClick={handleReset} disabled={pending}>
           Reset
-        </button>
+        </Button>
       </div>
     </div>
   );

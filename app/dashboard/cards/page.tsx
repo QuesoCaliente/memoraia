@@ -9,41 +9,37 @@ export default async function CardsPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Card Management</h1>
+      <h1 className="text-2xl font-bold text-foreground">Card Management</h1>
+
+      <div className="flex flex-col gap-3">
         <Link
-          href="/dashboard"
-          className="text-sm text-zinc-400 hover:text-white transition-colors"
+          href="/dashboard/cards/templates"
+          className="block rounded-xl border border-border bg-card px-4 py-3 text-center text-sm text-foreground transition-colors hover:bg-muted"
         >
-          ← Back to Dashboard
+          Manage Templates →
         </Link>
+        <Link
+          href="/dashboard/cards/pool"
+          className="block rounded-xl border border-border bg-card px-4 py-3 text-center text-sm text-foreground transition-colors hover:bg-muted"
+        >
+          Card Pool →
+        </Link>
+        <Link
+          href="/dashboard/cards/modifiers"
+          className="block rounded-xl border border-border bg-card px-4 py-3 text-center text-sm text-foreground transition-colors hover:bg-muted"
+        >
+          Tier Modifiers →
+        </Link>
+        {user.role === "admin" && (
+          <Link
+            href="/dashboard/cards/drop"
+            className="block rounded-xl border border-border bg-card px-4 py-3 text-center text-sm text-primary transition-colors hover:bg-muted"
+          >
+            Simular Drop →
+          </Link>
+        )}
       </div>
-      <Link
-        href="/dashboard/cards/templates"
-        className="block rounded-md border border-zinc-800 bg-zinc-900 p-4 text-center text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
-      >
-        Manage Templates →
-      </Link>
-      <Link
-        href="/dashboard/cards/pool"
-        className="block rounded-md border border-zinc-800 bg-zinc-900 p-4 text-center text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
-      >
-        Card Pool →
-      </Link>
-      <Link
-        href="/dashboard/cards/modifiers"
-        className="block rounded-md border border-zinc-800 bg-zinc-900 p-4 text-center text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
-      >
-        Tier Modifiers →
-      </Link>
-      {user.role === "admin" && (
-        <Link
-          href="/dashboard/cards/drop"
-          className="block rounded-md border border-yellow-800 bg-yellow-950 p-4 text-center text-yellow-300 transition-colors hover:bg-yellow-900 hover:text-yellow-200"
-        >
-          Simular Drop →
-        </Link>
-      )}
+
       <CategoryList initialCategories={categories} />
     </div>
   );

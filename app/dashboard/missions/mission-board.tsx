@@ -4,6 +4,19 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { claimMissionReward } from "@/app/actions/missions";
 import type { Mission, UserMission, MissionType } from "@/app/types/cards";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
 interface MissionBoardProps {
   missions: Mission[];
@@ -16,10 +29,13 @@ const TABS: { label: string; value: MissionType }[] = [
   { label: "Special", value: "special" },
 ];
 
-const TYPE_BADGE: Record<MissionType, string> = {
-  daily: "bg-blue-900 text-blue-300",
-  weekly: "bg-purple-900 text-purple-300",
-  special: "bg-amber-900 text-amber-300",
+const TYPE_BADGE_VARIANT: Record<
+  MissionType,
+  { className: string }
+> = {
+  daily: { className: "bg-blue-900/60 text-blue-300 border-blue-800" },
+  weekly: { className: "bg-purple-900/60 text-purple-300 border-purple-800" },
+  special: { className: "bg-amber-900/60 text-amber-300 border-amber-800" },
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -31,15 +47,12 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<MissionType>("daily");
   const [claimErrors, setClaimErrors] = useState<Record<string, string>>({});
   const [claimSuccesses, setClaimSuccesses] = useState<
     Record<string, { type: string; amount: number; cardName: string | null }>
   >({});
-  const [claimingIds, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
-
-  const filtered = missions.filter((m) => m.missionType === activeTab);
 
   function getUserMission(missionId: string): UserMission | undefined {
     return myMissions.find((um) => um.missionId === missionId);
@@ -76,136 +89,143 @@ export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
     });
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-zinc-800">
-        {TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveTab(tab.value)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab.value
-                ? "border-b-2 border-white text-white"
-                : "text-zinc-400 hover:text-white"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+  function renderMissionList(type: MissionType) {
+    const filtered = missions.filter((m) => m.missionType === type);
 
-      {/* Mission cards */}
-      {filtered.length === 0 ? (
-        <p className="text-sm text-zinc-500">No {activeTab} missions available.</p>
-      ) : (
-        <div className="space-y-4">
-          {filtered.map((mission) => {
-            const userMission = getUserMission(mission.id);
-            const status = userMission?.status;
-            const isLoading = pendingId === mission.id;
-            const claimError = claimErrors[mission.id];
-            const claimSuccess = claimSuccesses[mission.id];
+    if (filtered.length === 0) {
+      return (
+        <p className="text-sm text-muted-foreground">
+          No {type} missions available.
+        </p>
+      );
+    }
 
-            return (
-              <div
-                key={mission.id}
-                className="rounded-lg border border-zinc-800 bg-zinc-900 p-5 space-y-3"
-              >
-                {/* Header row */}
+    return (
+      <div className="space-y-4">
+        {filtered.map((mission) => {
+          const userMission = getUserMission(mission.id);
+          const status = userMission?.status;
+          const isLoading = pendingId === mission.id;
+          const claimError = claimErrors[mission.id];
+          const claimSuccess = claimSuccesses[mission.id];
+          const badgeStyle = TYPE_BADGE_VARIANT[mission.missionType];
+
+          return (
+            <Card key={mission.id} size="sm">
+              <CardHeader>
                 <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`rounded px-1.5 py-0.5 text-xs font-medium capitalize ${TYPE_BADGE[mission.missionType]}`}
-                      >
-                        {mission.missionType}
-                      </span>
-                      <h3 className="text-sm font-semibold text-white">{mission.name}</h3>
-                    </div>
-                    <p className="text-xs text-zinc-400">{mission.description}</p>
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <Badge
+                      variant="outline"
+                      className={cn("capitalize", badgeStyle.className)}
+                    >
+                      {mission.missionType}
+                    </Badge>
+                    <CardTitle>{mission.name}</CardTitle>
                   </div>
-
-                  {/* Reward */}
                   <div className="shrink-0 text-right">
-                    <p className="text-xs font-medium text-amber-400">
+                    <span className="text-xs font-medium text-amber-400">
                       {mission.rewardType === "dust"
                         ? `${mission.rewardAmount} dust`
                         : "Card reward"}
-                    </p>
+                    </span>
                   </div>
                 </div>
+                <CardDescription>{mission.description}</CardDescription>
+              </CardHeader>
 
-                {/* Progress + status */}
-                {userMission && (
-                  <div className="space-y-2">
-                    {/* Progress bar */}
-                    {status === "in_progress" && (
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs text-zinc-400">
-                          <span>Progress</span>
-                          <span>{userMission.progress}%</span>
-                        </div>
-                        <div className="h-1.5 w-full rounded-full bg-zinc-800">
-                          <div
-                            className="h-1.5 rounded-full bg-zinc-400 transition-all"
-                            style={{ width: `${Math.min(userMission.progress, 100)}%` }}
-                          />
-                        </div>
+              {userMission && (
+                <CardContent className="space-y-3">
+                  {status === "in_progress" && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Progress</span>
+                        <span>{userMission.progress}%</span>
                       </div>
-                    )}
-
-                    {/* Status badge */}
-                    <div className="flex items-center gap-3">
-                      {status === "in_progress" && (
-                        <span className="text-xs font-medium text-zinc-400">In Progress</span>
-                      )}
-                      {status === "completed" && (
-                        <span className="text-xs font-medium text-green-400">Completed</span>
-                      )}
-                      {status === "claimed" && (
-                        <span className="text-xs font-medium text-zinc-500 line-through">
-                          Claimed
-                        </span>
-                      )}
-
-                      {/* Claim button */}
-                      {status === "completed" && (
-                        <button
-                          onClick={() => handleClaim(mission.id)}
-                          disabled={isLoading}
-                          className="rounded-md bg-green-700 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {isLoading ? "Claiming…" : "Claim"}
-                        </button>
-                      )}
+                      <Progress value={Math.min(userMission.progress, 100)} />
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Feedback */}
-                {claimError && (
-                  <div className="rounded-md border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-300">
-                    {claimError}
-                  </div>
-                )}
-                {claimSuccess && (
-                  <div className="rounded-md border border-green-800 bg-green-950/40 px-3 py-2 text-xs text-green-300">
-                    Reward received:{" "}
-                    {claimSuccess.type === "dust" ? (
-                      <span className="font-medium">{claimSuccess.amount} dust</span>
-                    ) : (
-                      <span className="font-medium">
-                        {claimSuccess.cardName ?? "Card"}
-                      </span>
+                  <div className="flex items-center gap-3">
+                    {status === "in_progress" && (
+                      <Badge variant="secondary">In Progress</Badge>
+                    )}
+                    {status === "completed" && (
+                      <Badge className="bg-green-900/60 text-green-300 border-green-800">
+                        Completed
+                      </Badge>
+                    )}
+                    {status === "claimed" && (
+                      <Badge
+                        variant="outline"
+                        className="text-muted-foreground line-through"
+                      >
+                        Claimed
+                      </Badge>
+                    )}
+
+                    {status === "completed" && (
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        onClick={() => handleClaim(mission.id)}
+                        disabled={isLoading}
+                        className="bg-green-700 text-white hover:bg-green-600"
+                      >
+                        {isLoading ? "Claiming…" : "Claim"}
+                      </Button>
                     )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+                </CardContent>
+              )}
+
+              {(claimError || claimSuccess) && (
+                <CardContent className="pt-0">
+                  {claimError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{claimError}</AlertDescription>
+                    </Alert>
+                  )}
+                  {claimSuccess && (
+                    <Alert>
+                      <AlertDescription>
+                        Reward received:{" "}
+                        {claimSuccess.type === "dust" ? (
+                          <span className="font-medium text-foreground">
+                            {claimSuccess.amount} dust
+                          </span>
+                        ) : (
+                          <span className="font-medium text-foreground">
+                            {claimSuccess.cardName ?? "Card"}
+                          </span>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <Tabs defaultValue="daily">
+      <TabsList variant="line">
+        {TABS.map((tab) => (
+          <TabsTrigger key={tab.value} value={tab.value}>
+            {tab.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+
+      {TABS.map((tab) => (
+        <TabsContent key={tab.value} value={tab.value} className="mt-6">
+          {renderMissionList(tab.value)}
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }

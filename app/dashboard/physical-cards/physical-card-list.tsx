@@ -4,18 +4,34 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { requestPhysicalCard } from "@/app/actions/physical-cards";
 import type { PhysicalCard, PhysicalCardStatus } from "@/app/types/cards";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { TriangleAlertIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PhysicalCardListProps {
   initialRequests: PhysicalCard[];
   total: number;
 }
 
-const STATUS_BADGE: Record<PhysicalCardStatus, string> = {
-  pending: "bg-amber-900 text-amber-300",
-  approved: "bg-blue-900 text-blue-300",
-  shipped: "bg-purple-900 text-purple-300",
-  delivered: "bg-green-900 text-green-300",
-  rejected: "bg-red-900 text-red-300",
+const STATUS_VARIANT: Record<
+  PhysicalCardStatus,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  pending: "outline",
+  approved: "secondary",
+  shipped: "default",
+  delivered: "secondary",
+  rejected: "destructive",
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -28,7 +44,10 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 const EMPTY_SHIPPING = { name: "", address: "", city: "", country: "" };
 
-export function PhysicalCardList({ initialRequests, total }: PhysicalCardListProps) {
+export function PhysicalCardList({
+  initialRequests,
+  total,
+}: PhysicalCardListProps) {
   const router = useRouter();
   const [requests, setRequests] = useState<PhysicalCard[]>(initialRequests);
   const [userCardId, setUserCardId] = useState("");
@@ -55,7 +74,9 @@ export function PhysicalCardList({ initialRequests, total }: PhysicalCardListPro
           router.push("/");
           return;
         }
-        setSubmitError(ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error);
+        setSubmitError(
+          ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error
+        );
         return;
       }
 
@@ -68,145 +89,149 @@ export function PhysicalCardList({ initialRequests, total }: PhysicalCardListPro
   return (
     <div className="space-y-8">
       {/* Request form */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 space-y-4">
-        <h2 className="text-base font-semibold text-white">Request a Physical Card</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="block text-xs font-medium text-zinc-400" htmlFor="userCardId">
-              Card ID
-            </label>
-            <input
-              id="userCardId"
-              type="text"
-              value={userCardId}
-              onChange={(e) => setUserCardId(e.target.value)}
-              required
-              placeholder="Enter your card ID"
-              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none"
-            />
-          </div>
-
-          <fieldset className="space-y-3">
-            <legend className="text-xs font-medium text-zinc-400">Shipping Information</legend>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <label className="block text-xs text-zinc-500" htmlFor="shippingName">
-                  Full Name
-                </label>
-                <input
-                  id="shippingName"
-                  type="text"
-                  value={shipping.name}
-                  onChange={(e) => handleShippingChange("name", e.target.value)}
-                  required
-                  placeholder="John Doe"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs text-zinc-500" htmlFor="shippingCountry">
-                  Country
-                </label>
-                <input
-                  id="shippingCountry"
-                  type="text"
-                  value={shipping.country}
-                  onChange={(e) => handleShippingChange("country", e.target.value)}
-                  required
-                  placeholder="US"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs text-zinc-500" htmlFor="shippingAddress">
-                  Address
-                </label>
-                <input
-                  id="shippingAddress"
-                  type="text"
-                  value={shipping.address}
-                  onChange={(e) => handleShippingChange("address", e.target.value)}
-                  required
-                  placeholder="123 Main St"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="block text-xs text-zinc-500" htmlFor="shippingCity">
-                  City
-                </label>
-                <input
-                  id="shippingCity"
-                  type="text"
-                  value={shipping.city}
-                  onChange={(e) => handleShippingChange("city", e.target.value)}
-                  required
-                  placeholder="Springfield"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white placeholder-zinc-500 focus:border-zinc-500 focus:outline-none"
-                />
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Request a Physical Card</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="userCardId">Card ID</Label>
+              <Input
+                id="userCardId"
+                type="text"
+                value={userCardId}
+                onChange={(e) => setUserCardId(e.target.value)}
+                required
+                placeholder="Enter your card ID"
+              />
             </div>
-          </fieldset>
 
-          {submitError && (
-            <div className="rounded-md border border-red-800 bg-red-950/40 px-3 py-2 text-xs text-red-300">
-              {submitError}
-            </div>
-          )}
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-medium text-foreground">
+                Shipping Information
+              </legend>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="shippingName">Full Name</Label>
+                  <Input
+                    id="shippingName"
+                    type="text"
+                    value={shipping.name}
+                    onChange={(e) =>
+                      handleShippingChange("name", e.target.value)
+                    }
+                    required
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="shippingCountry">Country</Label>
+                  <Input
+                    id="shippingCountry"
+                    type="text"
+                    value={shipping.country}
+                    onChange={(e) =>
+                      handleShippingChange("country", e.target.value)
+                    }
+                    required
+                    placeholder="US"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="shippingAddress">Address</Label>
+                  <Input
+                    id="shippingAddress"
+                    type="text"
+                    value={shipping.address}
+                    onChange={(e) =>
+                      handleShippingChange("address", e.target.value)
+                    }
+                    required
+                    placeholder="123 Main St"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="shippingCity">City</Label>
+                  <Input
+                    id="shippingCity"
+                    type="text"
+                    value={shipping.city}
+                    onChange={(e) =>
+                      handleShippingChange("city", e.target.value)
+                    }
+                    required
+                    placeholder="Springfield"
+                  />
+                </div>
+              </div>
+            </fieldset>
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="rounded-md bg-zinc-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-600 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isPending ? "Submitting…" : "Request Physical Card"}
-          </button>
-        </form>
-      </div>
+            {submitError && (
+              <Alert variant="destructive">
+                <TriangleAlertIcon />
+                <AlertDescription>{submitError}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Submitting…" : "Request Physical Card"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* Requests list */}
       <div className="space-y-4">
-        <h2 className="text-base font-semibold text-white">
+        <h2 className="text-base font-semibold text-foreground">
           Your Requests{" "}
-          <span className="text-sm font-normal text-zinc-500">({total})</span>
+          <span className="text-sm font-normal text-muted-foreground">
+            ({total})
+          </span>
         </h2>
 
         {requests.length === 0 ? (
-          <p className="text-sm text-zinc-500">No physical card requests yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No physical card requests yet.
+          </p>
         ) : (
           <div className="space-y-3">
             {requests.map((req) => (
-              <div
-                key={req.id}
-                className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 space-y-2"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0 space-y-1">
-                    <p className="text-xs text-zinc-400">
-                      Card ID:{" "}
-                      <span className="font-mono text-zinc-300">{req.userCardId}</span>
-                    </p>
-                    {req.verificationCode && (
-                      <p className="text-xs text-zinc-400">
-                        Verification Code:{" "}
-                        <span className="font-mono text-zinc-300">{req.verificationCode}</span>
+              <Card key={req.id}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        Card ID:{" "}
+                        <span className="font-mono text-foreground">
+                          {req.userCardId}
+                        </span>
                       </p>
-                    )}
-                    <p className="text-xs text-zinc-500">
-                      {new Date(req.createdAt).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </p>
+                      {req.verificationCode && (
+                        <p className="text-xs text-muted-foreground">
+                          Verification Code:{" "}
+                          <span className="font-mono text-foreground">
+                            {req.verificationCode}
+                          </span>
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(req.createdAt).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={STATUS_VARIANT[req.status]}
+                      className="shrink-0 capitalize"
+                    >
+                      {req.status}
+                    </Badge>
                   </div>
-                  <span
-                    className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium capitalize ${STATUS_BADGE[req.status]}`}
-                  >
-                    {req.status}
-                  </span>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}

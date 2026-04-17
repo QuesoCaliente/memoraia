@@ -2,6 +2,16 @@
 
 import { useState } from "react";
 import { enableStreamer } from "@/app/actions/auth";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Sparkles } from "lucide-react";
 
 export function EnableStreamerButton() {
   const [loading, setLoading] = useState(false);
@@ -25,20 +35,27 @@ export function EnableStreamerButton() {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-      <h2 className="text-lg font-semibold text-white">Modo Streamer</h2>
-      <p className="text-sm text-zinc-400">
-        Activá el modo streamer para crear cartas, gestionar tu overlay, configurar
-        batallas y más.
-      </p>
-      <button
-        onClick={handleEnable}
-        disabled={loading}
-        className="self-start rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
-      >
-        {loading ? "Activando..." : "Activar modo streamer"}
-      </button>
-      {error && <p className="text-sm text-red-400">{error}</p>}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          Modo Streamer
+        </CardTitle>
+        <CardDescription>
+          Activá el modo streamer para crear cartas, gestionar tu overlay,
+          configurar batallas y más.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <Button onClick={handleEnable} disabled={loading} className="self-start">
+          {loading ? "Activando..." : "Activar modo streamer"}
+        </Button>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
 }

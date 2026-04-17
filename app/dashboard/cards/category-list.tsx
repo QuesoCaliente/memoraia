@@ -4,24 +4,24 @@ import { useState } from "react";
 import { deleteCategory } from "@/app/actions/cards";
 import type { CardCategory } from "@/app/types/cards";
 import { CategoryForm } from "./category-form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface CategoryListProps {
   initialCategories: CardCategory[];
-}
-
-function OriginBadge({ origin }: { origin: CardCategory["origin"] }) {
-  const isSystem = origin === "system";
-  return (
-    <span
-      className={`rounded px-2 py-0.5 text-xs font-medium ${
-        isSystem
-          ? "bg-zinc-700 text-zinc-300"
-          : "bg-purple-900 text-purple-300"
-      }`}
-    >
-      {isSystem ? "System" : "Custom"}
-    </span>
-  );
 }
 
 export function CategoryList({ initialCategories }: CategoryListProps) {
@@ -74,67 +74,97 @@ export function CategoryList({ initialCategories }: CategoryListProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-white">Categories</h2>
+      <h2 className="text-lg font-semibold text-foreground">Categories</h2>
 
       {error && (
-        <p className="rounded-md border border-red-800 bg-red-950 px-3 py-2 text-sm text-red-400">
-          {error}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {categories.length === 0 ? (
-        <p className="text-sm text-zinc-500">No categories yet.</p>
+        <p className="text-sm text-muted-foreground">No categories yet.</p>
       ) : (
         <div className="flex flex-col gap-2">
           {categories.map((category) => (
-            <div
-              key={category.id}
-              className="rounded-lg border border-zinc-800 bg-zinc-900 p-4"
-            >
-              {editingId === category.id ? (
-                <CategoryForm
-                  category={category}
-                  onSave={handleSaved}
-                  onCancel={() => setEditingId(null)}
-                />
-              ) : (
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{category.name}</span>
-                      <OriginBadge origin={category.origin} />
+            <Card key={category.id} size="sm">
+              <CardContent>
+                {editingId === category.id ? (
+                  <CategoryForm
+                    category={category}
+                    onSave={handleSaved}
+                    onCancel={() => setEditingId(null)}
+                  />
+                ) : (
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{category.name}</span>
+                        <Badge variant={category.origin === "system" ? "secondary" : "outline"}>
+                          {category.origin === "system" ? "System" : "Custom"}
+                        </Badge>
+                      </div>
+                      {category.description && (
+                        <p className="text-sm text-muted-foreground">{category.description}</p>
+                      )}
                     </div>
-                    {category.description && (
-                      <p className="text-sm text-zinc-400">{category.description}</p>
-                    )}
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingId(category.id)}
+                        disabled={isPending}
+                      >
+                        Edit
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger
+                          render={
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={isPending}
+                            />
+                          }
+                        >
+                          Delete
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete category?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete &quot;{category.name}&quot;. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              variant="destructive"
+                              disabled={deletingId === category.id}
+                              onClick={() => handleDelete(category.id)}
+                            >
+                              {deletingId === category.id ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
-                  <div className="flex shrink-0 gap-2">
-                    <button
-                      onClick={() => setEditingId(category.id)}
-                      disabled={isPending}
-                      className="rounded-md border border-zinc-700 bg-transparent px-3 py-1 text-xs font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:opacity-50"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(category.id)}
-                      disabled={isPending || deletingId === category.id}
-                      className="rounded-md border border-red-800 bg-transparent px-3 py-1 text-xs font-medium text-red-400 transition-colors hover:bg-red-950 disabled:opacity-50"
-                    >
-                      {deletingId === category.id ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-        <h3 className="mb-3 text-sm font-semibold text-zinc-300">New Category</h3>
-        <CategoryForm onSave={handleSaved} />
-      </div>
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle>New Category</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CategoryForm onSave={handleSaved} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

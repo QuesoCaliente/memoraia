@@ -3,6 +3,25 @@
 import { useState } from "react";
 import { updateProfileAction } from "@/app/actions/profile";
 import type { User, TwitchReward } from "@/app/types/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CheckIcon, TriangleAlertIcon } from "lucide-react";
 
 interface SettingsFormProps {
   user: User;
@@ -23,7 +42,11 @@ function mapFormError(error: string): string {
   }
 }
 
-export function SettingsForm({ user, rewards, affiliateRequired }: SettingsFormProps) {
+export function SettingsForm({
+  user,
+  rewards,
+  affiliateRequired,
+}: SettingsFormProps) {
   const [displayName, setDisplayName] = useState(user.displayName);
   const [streamerBio, setStreamerBio] = useState(user.streamerBio ?? "");
   const [streamerSlug, setStreamerSlug] = useState(user.streamerSlug ?? "");
@@ -50,7 +73,8 @@ export function SettingsForm({ user, rewards, affiliateRequired }: SettingsFormP
     const payload: Record<string, string | null> = {};
     if (displayName !== initial.displayName) payload.displayName = displayName;
     if (streamerBio !== initial.streamerBio) payload.streamerBio = streamerBio;
-    if (streamerSlug !== initial.streamerSlug) payload.streamerSlug = streamerSlug;
+    if (streamerSlug !== initial.streamerSlug)
+      payload.streamerSlug = streamerSlug;
     if (cardDropRewardId !== initial.cardDropRewardId) {
       payload.cardDropRewardId = cardDropRewardId || null;
     }
@@ -82,108 +106,112 @@ export function SettingsForm({ user, rewards, affiliateRequired }: SettingsFormP
     }
   }
 
-  const inputClass =
-    "rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 outline-none placeholder:text-zinc-600 focus:border-zinc-500 disabled:opacity-50";
-  const labelClass = "text-sm text-zinc-400";
-  const fieldClass = "flex flex-col gap-1";
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 rounded-md border border-zinc-800 bg-zinc-900 p-6">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Profile
-        </p>
-
-        <div className={fieldClass}>
-          <label className={labelClass}>Display Name</label>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Your display name"
-            disabled={isPending}
-            className={inputClass}
-          />
-        </div>
-
-        <div className={fieldClass}>
-          <label className={labelClass}>Bio</label>
-          <textarea
-            value={streamerBio}
-            onChange={(e) => setStreamerBio(e.target.value)}
-            placeholder="Tell viewers about yourself"
-            rows={3}
-            disabled={isPending}
-            className={`resize-none ${inputClass}`}
-          />
-        </div>
-
-        <div className={fieldClass}>
-          <label className={labelClass}>Slug</label>
-          <input
-            type="text"
-            value={streamerSlug}
-            onChange={(e) => setStreamerSlug(e.target.value)}
-            placeholder="your-unique-slug"
-            disabled={isPending}
-            className={inputClass}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-4 rounded-md border border-zinc-800 bg-zinc-900 p-6">
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Card Drop Reward
-        </p>
-
-        {affiliateRequired ? (
-          <p className="text-sm text-zinc-400">
-            Channel Point Rewards require Twitch Affiliate or Partner status.
-            Become an Affiliate to configure a reward trigger for card drops.
-          </p>
-        ) : (
-          <div className={fieldClass}>
-            <label className={labelClass}>Trigger Reward</label>
-            <select
-              value={cardDropRewardId}
-              onChange={(e) => setCardDropRewardId(e.target.value)}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Profile
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="displayName">Display Name</Label>
+            <Input
+              id="displayName"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Your display name"
               disabled={isPending}
-              className={inputClass}
-            >
-              <option value="">— None —</option>
-              {rewards.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.title} ({r.cost} points)
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-zinc-500">
-              When a viewer redeems this reward, a card drop will be triggered.
-            </p>
+            />
           </div>
-        )}
-      </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="streamerBio">Bio</Label>
+            <Textarea
+              id="streamerBio"
+              value={streamerBio}
+              onChange={(e) => setStreamerBio(e.target.value)}
+              placeholder="Tell viewers about yourself"
+              rows={3}
+              disabled={isPending}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="streamerSlug">Slug</Label>
+            <Input
+              id="streamerSlug"
+              type="text"
+              value={streamerSlug}
+              onChange={(e) => setStreamerSlug(e.target.value)}
+              placeholder="your-unique-slug"
+              disabled={isPending}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Card Drop Reward
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {affiliateRequired ? (
+            <p className="text-sm text-muted-foreground">
+              Channel Point Rewards require Twitch Affiliate or Partner status.
+              Become an Affiliate to configure a reward trigger for card drops.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="cardDropRewardId">Trigger Reward</Label>
+              <Select
+                value={cardDropRewardId}
+                onValueChange={(value) => setCardDropRewardId(value ?? "")}
+                disabled={isPending}
+              >
+                <SelectTrigger id="cardDropRewardId" className="w-full">
+                  <SelectValue placeholder="— None —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">— None —</SelectItem>
+                  {rewards.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.title} ({r.cost} points)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                When a viewer redeems this reward, a card drop will be
+                triggered.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {error && (
-        <p className="rounded-md bg-red-950 px-3 py-2 text-sm text-red-400">
-          {error}
-        </p>
+        <Alert variant="destructive">
+          <TriangleAlertIcon />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {success && (
-        <p className="rounded-md bg-green-950 px-3 py-2 text-sm text-green-400">
-          Settings saved successfully.
-        </p>
+        <Alert>
+          <CheckIcon />
+          <AlertDescription>Settings saved successfully.</AlertDescription>
+        </Alert>
       )}
 
       <div>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
-        >
+        <Button type="submit" disabled={isPending}>
           {isPending ? "Saving..." : "Save Settings"}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -3,6 +3,19 @@
 import { useState } from "react";
 import { createTemplate, updateTemplate } from "@/app/actions/cards";
 import type { CardCategory, CardTemplate, CardRarity, CardOrigin } from "@/app/types/cards";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RARITIES } from "@/lib/rarity";
 
 interface TemplateFormProps {
   template?: CardTemplate;
@@ -11,7 +24,6 @@ interface TemplateFormProps {
   onCancel?: () => void;
 }
 
-const RARITIES: CardRarity[] = ["common", "uncommon", "rare", "epic", "legendary"];
 const ORIGINS: CardOrigin[] = ["streamer", "system"];
 
 function mapFormError(error: string): string {
@@ -114,113 +126,121 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
     }
   }
 
-  const inputClass =
-    "rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 outline-none placeholder:text-zinc-600 focus:border-zinc-500 disabled:opacity-50";
-  const labelClass = "text-sm text-zinc-400";
-  const fieldClass = "flex flex-col gap-1";
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className={fieldClass}>
-          <label className={labelClass}>
-            Name <span className="text-red-400">*</span>
-          </label>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tmpl-name">
+            Name <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="tmpl-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Template name"
             required
             disabled={isPending}
-            className={inputClass}
           />
         </div>
 
-        <div className={fieldClass}>
-          <label className={labelClass}>
-            Image URL <span className="text-red-400">*</span>
-          </label>
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tmpl-image">
+            Image URL <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="tmpl-image"
             type="text"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://..."
             required
             disabled={isPending}
-            className={inputClass}
           />
         </div>
 
-        <div className={fieldClass}>
-          <label className={labelClass}>
-            Rarity <span className="text-red-400">*</span>
-          </label>
-          <select
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tmpl-rarity">
+            Rarity <span className="text-destructive">*</span>
+          </Label>
+          <Select
             value={rarity}
-            onChange={(e) => setRarity(e.target.value as CardRarity)}
+            onValueChange={(v) => setRarity(v as CardRarity)}
             disabled={isPending}
-            className={inputClass}
           >
-            {RARITIES.map((r) => (
-              <option key={r} value={r}>
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="tmpl-rarity" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {RARITIES.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r.charAt(0).toUpperCase() + r.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className={fieldClass}>
-          <label className={labelClass}>
-            Origin <span className="text-red-400">*</span>
-          </label>
-          <select
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tmpl-origin">
+            Origin <span className="text-destructive">*</span>
+          </Label>
+          <Select
             value={origin}
-            onChange={(e) => setOrigin(e.target.value as CardOrigin)}
+            onValueChange={(v) => setOrigin(v as CardOrigin)}
             disabled={isPending || isEditing}
-            className={inputClass}
           >
-            {ORIGINS.map((o) => (
-              <option key={o} value={o}>
-                {o.charAt(0).toUpperCase() + o.slice(1)}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="tmpl-origin" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ORIGINS.map((o) => (
+                <SelectItem key={o} value={o}>
+                  {o.charAt(0).toUpperCase() + o.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className={fieldClass}>
-          <label className={labelClass}>Category</label>
-          <select
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="tmpl-category">Category</Label>
+          <Select
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
+            onValueChange={(v) => setCategoryId(v ?? "")}
             disabled={isPending}
-            className={inputClass}
           >
-            <option value="">— None —</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="tmpl-category" className="w-full">
+              <SelectValue placeholder="— None —" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">— None —</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <div className={fieldClass}>
-        <label className={labelClass}>Description</label>
-        <textarea
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="tmpl-desc">Description</Label>
+        <Textarea
+          id="tmpl-desc"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Optional description"
           rows={2}
           disabled={isPending}
-          className={`resize-none ${inputClass}`}
+          className="resize-none"
         />
       </div>
 
       {isEditing && (
-        <div className="flex flex-col gap-3 rounded-md border border-zinc-800 bg-zinc-950 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Stats
           </p>
           <div className="grid grid-cols-3 gap-3">
@@ -234,36 +254,34 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
                 ["Growth AGI", growthAgility, setGrowthAgility],
               ] as const
             ).map(([label, value, setter]) => (
-              <div key={label} className={fieldClass}>
-                <label className={labelClass}>{label}</label>
-                <input
+              <div key={label} className="flex flex-col gap-1.5">
+                <Label>{label}</Label>
+                <Input
                   type="number"
                   value={value}
                   onChange={(e) => setter(e.target.value)}
                   min={0}
                   step={1}
                   disabled={isPending}
-                  className={inputClass}
                 />
               </div>
             ))}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className={fieldClass}>
-              <label className={labelClass}>Drop Weight</label>
-              <input
+            <div className="flex flex-col gap-1.5">
+              <Label>Drop Weight</Label>
+              <Input
                 type="number"
                 value={dropWeight}
                 onChange={(e) => setDropWeight(e.target.value)}
                 min={0}
                 step={0.01}
                 disabled={isPending}
-                className={inputClass}
               />
             </div>
-            <div className={fieldClass}>
-              <label className={labelClass}>Max Supply</label>
-              <input
+            <div className="flex flex-col gap-1.5">
+              <Label>Max Supply</Label>
+              <Input
                 type="number"
                 value={maxSupply}
                 onChange={(e) => setMaxSupply(e.target.value)}
@@ -271,32 +289,34 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
                 step={1}
                 placeholder="Unlimited"
                 disabled={isPending}
-                className={inputClass}
               />
             </div>
           </div>
         </div>
       )}
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
           disabled={isPending || !name.trim() || !imageUrl.trim()}
-          className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
         >
           {isPending ? "Saving..." : isEditing ? "Save Changes" : "Add Template"}
-        </button>
+        </Button>
         {onCancel && (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onCancel}
             disabled={isPending}
-            className="rounded-md border border-zinc-700 bg-transparent px-4 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white disabled:opacity-50"
           >
             Cancel
-          </button>
+          </Button>
         )}
       </div>
     </form>

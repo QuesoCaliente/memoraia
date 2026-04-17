@@ -3,39 +3,49 @@
 import { useState, useTransition } from "react";
 import { getInventoryAction } from "@/app/actions/inventory";
 import type { CardRarity, InventoryFilters, UserCard } from "@/app/types/cards";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RARITIES, RARITY_CONFIG } from "@/lib/rarity";
+import { cn } from "@/lib/utils";
 
 interface InventoryGridProps {
   initialCards: UserCard[];
   total: number;
 }
 
-const RARITY_BADGE: Record<CardRarity, string> = {
-  common: "bg-zinc-700 text-zinc-300",
-  uncommon: "bg-green-900 text-green-300",
-  rare: "bg-blue-900 text-blue-300",
-  epic: "bg-purple-900 text-purple-300",
-  legendary: "bg-amber-900 text-amber-300",
-};
-
-const RARITIES: CardRarity[] = ["common", "uncommon", "rare", "epic", "legendary"];
-
 type ActiveFilter = "all" | "active" | "inactive";
 
 function RarityBadge({ rarity }: { rarity: CardRarity }) {
+  const config = RARITY_CONFIG[rarity];
   return (
-    <span
-      className={`rounded px-1.5 py-0.5 text-xs font-medium capitalize ${RARITY_BADGE[rarity as CardRarity]}`}
+    <Badge
+      variant="outline"
+      className={cn(
+        "border capitalize",
+        config.bg,
+        config.text,
+        config.border
+      )}
     >
       {rarity}
-    </span>
+    </Badge>
   );
 }
 
 function StatRow({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex justify-between text-xs">
-      <span className="text-zinc-400">{label}</span>
-      <span className="font-medium text-white">{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -61,10 +71,11 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
     });
   }
 
-  function handleRarityChange(value: CardRarity | "all") {
-    setSelectedRarity(value);
+  function handleRarityChange(value: string | null) {
+    const rarity = value as CardRarity | "all";
+    setSelectedRarity(rarity);
     setExpandedId(null);
-    applyFilters(value, activeFilter);
+    applyFilters(rarity, activeFilter);
   }
 
   function handleActiveChange(value: ActiveFilter) {
@@ -81,54 +92,64 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
     <div className="flex flex-col gap-6">
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
-        <select
+        <Select
           value={selectedRarity}
-          onChange={(e) => handleRarityChange(e.target.value as CardRarity | "all")}
+          onValueChange={handleRarityChange}
           disabled={isPending}
-          className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-white focus:border-zinc-500 focus:outline-none disabled:opacity-50"
         >
-          <option value="all">All rarities</option>
-          {RARITIES.map((r) => (
-            <option key={r} value={r} className="capitalize">
-              {r}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="All rarities" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All rarities</SelectItem>
+            {RARITIES.map((r) => (
+              <SelectItem key={r} value={r} className="capitalize">
+                {r}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <div className="flex overflow-hidden rounded-md border border-zinc-700">
+        <div className="flex overflow-hidden rounded-lg border border-border">
           {(["all", "active", "inactive"] as ActiveFilter[]).map((option) => (
-            <button
+            <Button
               key={option}
               onClick={() => handleActiveChange(option)}
               disabled={isPending}
-              className={`px-3 py-1.5 text-sm capitalize transition-colors disabled:opacity-50 ${
-                activeFilter === option
-                  ? "bg-zinc-700 text-white"
-                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
-              }`}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "rounded-none capitalize",
+                activeFilter === option && "bg-muted text-foreground"
+              )}
             >
               {option}
-            </button>
+            </Button>
           ))}
         </div>
 
-        <span className="ml-auto text-xs text-zinc-500">
+        <span className="ml-auto text-xs text-muted-foreground">
           {isPending ? "Loading…" : `${totalCount} cards`}
         </span>
       </div>
 
-      {/* Loading overlay hint */}
+      {/* Loading skeleton */}
       {isPending && (
-        <div className="flex items-center justify-center py-4">
-          <span className="text-sm text-zinc-500">Loading…</span>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <Skeleton className="aspect-square w-full rounded-lg" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ))}
         </div>
       )}
 
       {/* Empty state */}
       {!isPending && cards.length === 0 && (
         <div className="flex flex-col items-center gap-2 py-16">
-          <p className="text-sm text-zinc-500">No cards found</p>
-          <p className="text-xs text-zinc-600">Try adjusting your filters</p>
+          <p className="text-sm text-muted-foreground">No cards found</p>
+          <p className="text-xs text-muted-foreground/60">Try adjusting your filters</p>
         </div>
       )}
 
@@ -139,12 +160,13 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
             <div key={card.id} className="flex flex-col gap-2">
               <button
                 onClick={() => toggleExpand(card.id)}
-                className={`group relative flex flex-col overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 transition-colors hover:border-zinc-700 ${
-                  !card.isActive ? "opacity-50" : ""
-                }`}
+                className={cn(
+                  "group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-border/70 hover:bg-card/80",
+                  !card.isActive && "opacity-50"
+                )}
               >
                 {/* Card image */}
-                <div className="relative aspect-square w-full overflow-hidden bg-zinc-800">
+                <div className="relative aspect-square w-full overflow-hidden bg-muted">
                   {card.template.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -153,21 +175,24 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-zinc-600">
+                    <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
                       No img
                     </div>
                   )}
 
                   {/* Level badge — top left */}
-                  <span className="absolute left-1.5 top-1.5 rounded bg-zinc-950/80 px-1.5 py-0.5 text-xs font-semibold text-white">
+                  <span className="absolute left-1.5 top-1.5 rounded bg-background/80 px-1.5 py-0.5 text-xs font-semibold text-foreground">
                     Lv. {card.level}
                   </span>
 
                   {/* Rarity badge — bottom right */}
                   <span
-                    className={`absolute bottom-1.5 right-1.5 rounded px-1.5 py-0.5 text-xs font-medium capitalize ${
-                      RARITY_BADGE[card.template.rarity as CardRarity] ?? "bg-zinc-700 text-zinc-300"
-                    }`}
+                    className={cn(
+                      "absolute bottom-1.5 right-1.5 rounded border px-1.5 py-0.5 text-xs font-medium capitalize",
+                      RARITY_CONFIG[card.template.rarity as CardRarity]?.bg ?? "bg-muted",
+                      RARITY_CONFIG[card.template.rarity as CardRarity]?.text ?? "text-muted-foreground",
+                      RARITY_CONFIG[card.template.rarity as CardRarity]?.border ?? "border-border"
+                    )}
                   >
                     {card.template.rarity}
                   </span>
@@ -175,7 +200,7 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
 
                 {/* Card name */}
                 <div className="px-2 py-1.5">
-                  <p className="truncate text-xs font-medium text-white">
+                  <p className="truncate text-xs font-medium text-foreground">
                     {card.template.name}
                   </p>
                 </div>
@@ -183,12 +208,14 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
 
               {/* Expanded stats panel */}
               {expandedId === card.id && (
-                <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-3 text-xs">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="font-semibold text-white">{card.template.name}</span>
-                    <RarityBadge rarity={card.template.rarity as CardRarity} />
-                  </div>
-                  <div className="flex flex-col gap-1">
+                <Card size="sm">
+                  <CardContent className="flex flex-col gap-1 pt-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">
+                        {card.template.name}
+                      </span>
+                      <RarityBadge rarity={card.template.rarity as CardRarity} />
+                    </div>
                     <StatRow label="Level" value={card.level} />
                     <StatRow label="XP" value={card.xp} />
                     <StatRow label="Attack" value={card.attack} />
@@ -200,8 +227,8 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
                       value={new Date(card.obtainedAt).toLocaleDateString()}
                     />
                     <StatRow label="Status" value={card.isActive ? "Active" : "Inactive"} />
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
           ))}

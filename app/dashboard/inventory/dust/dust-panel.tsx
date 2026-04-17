@@ -4,6 +4,38 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { destroyCardForDust } from "@/app/actions/fusion";
 import type { CardRarity, DustTransaction, UserCard } from "@/app/types/cards";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RARITY_CONFIG } from "@/lib/rarity";
+import { cn } from "@/lib/utils";
 
 interface DustPanelProps {
   initialBalance: number;
@@ -12,14 +44,6 @@ interface DustPanelProps {
   cards: UserCard[];
 }
 
-const RARITY_BADGE: Record<CardRarity, string> = {
-  common: "bg-zinc-700 text-zinc-300",
-  uncommon: "bg-green-900 text-green-300",
-  rare: "bg-blue-900 text-blue-300",
-  epic: "bg-purple-900 text-purple-300",
-  legendary: "bg-amber-900 text-amber-300",
-};
-
 const ERROR_MESSAGES: Record<string, string> = {
   forbidden: "You don't own this card",
   undestroyable: "This card cannot be destroyed (inactive or legendary).",
@@ -27,6 +51,18 @@ const ERROR_MESSAGES: Record<string, string> = {
   conflict: "This card is currently in use",
   server_error: "Something went wrong. Please try again.",
 };
+
+function RarityBadge({ rarity }: { rarity: CardRarity }) {
+  const config = RARITY_CONFIG[rarity];
+  return (
+    <Badge
+      variant="outline"
+      className={cn("border capitalize", config.bg, config.text, config.border)}
+    >
+      {rarity}
+    </Badge>
+  );
+}
 
 export function DustPanel({
   initialBalance,
@@ -77,158 +113,188 @@ export function DustPanel({
   return (
     <div className="space-y-8">
       {/* ── Balance ─────────────────────────────────────────────────── */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center">
-        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-          Dust Balance
-        </p>
-        <p className="mt-2 text-5xl font-bold text-amber-400">{balance.toLocaleString()}</p>
-      </div>
+      <Card>
+        <CardContent className="py-6 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Dust Balance
+          </p>
+          <p className="mt-2 text-5xl font-bold text-amber-400">{balance.toLocaleString()}</p>
+        </CardContent>
+      </Card>
 
       {/* ── Destroy section ─────────────────────────────────────────── */}
-      <div className="space-y-4 rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="text-base font-semibold text-white">Destroy Card for Dust</h2>
+      <Card>
+        <CardHeader>
+          <CardTitle>Destroy Card for Dust</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {destroyResult && (
+            <Alert className="border-green-800 bg-green-950/40">
+              <AlertDescription className="text-green-300">
+                <span className="font-medium text-foreground">{destroyResult.cardName}</span>{" "}
+                destroyed for{" "}
+                <span className="font-medium text-foreground">{destroyResult.dustGained} dust</span>.
+              </AlertDescription>
+            </Alert>
+          )}
 
-        {destroyResult && (
-          <div className="rounded-md border border-green-800 bg-green-950/40 px-4 py-3 text-sm text-green-300">
-            <span className="font-medium">{destroyResult.cardName}</span> destroyed for{" "}
-            <span className="font-medium">{destroyResult.dustGained} dust</span>.
+          {destroyError && (
+            <Alert variant="destructive">
+              <AlertDescription>{destroyError}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Card selector */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-muted-foreground">
+              Select a card to destroy
+            </label>
+            <Select
+              value={selectedCardId ?? ""}
+              onValueChange={(value) => {
+                setSelectedCardId(value || null);
+                setDestroyError(null);
+                setDestroyResult(null);
+              }}
+              disabled={isPending}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="— Choose a card —" />
+              </SelectTrigger>
+              <SelectContent>
+                {cards.map((card) => (
+                  <SelectItem key={card.id} value={card.id}>
+                    {card.template.name} ({card.template.rarity}) — Lv. {card.level}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
 
-        {destroyError && (
-          <div className="rounded-md border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-300">
-            {destroyError}
-          </div>
-        )}
-
-        {/* Card selector */}
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-            Select a card to destroy
-          </label>
-          <select
-            value={selectedCardId ?? ""}
-            onChange={(e) => {
-              setSelectedCardId(e.target.value || null);
-              setDestroyError(null);
-              setDestroyResult(null);
-            }}
-            disabled={isPending}
-            className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-zinc-500 focus:outline-none disabled:opacity-50"
-          >
-            <option value="">— Choose a card —</option>
-            {cards.map((card) => (
-              <option key={card.id} value={card.id}>
-                {card.template.name} ({card.template.rarity}) — Lv. {card.level}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Selected card preview */}
-        {selectedCard && (
-          <div className="flex items-center gap-4 rounded-lg border border-zinc-700 bg-zinc-800 p-3">
-            {selectedCard.template.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={selectedCard.template.imageUrl}
-                alt={selectedCard.template.name}
-                className="h-12 w-12 rounded object-cover"
-              />
-            ) : (
-              <div className="h-12 w-12 rounded bg-zinc-700" />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium text-white">
-                {selectedCard.template.name}
-              </p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span
-                  className={`rounded px-1.5 py-0.5 text-xs font-medium capitalize ${
-                    RARITY_BADGE[selectedCard.template.rarity as CardRarity] ??
-                    "bg-zinc-700 text-zinc-300"
-                  }`}
-                >
-                  {selectedCard.template.rarity}
-                </span>
-                <span className="text-xs text-zinc-400">Level {selectedCard.level}</span>
+          {/* Selected card preview */}
+          {selectedCard && (
+            <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/30 p-3">
+              {selectedCard.template.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedCard.template.imageUrl}
+                  alt={selectedCard.template.name}
+                  className="h-12 w-12 rounded object-cover"
+                />
+              ) : (
+                <div className="h-12 w-12 rounded bg-muted" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {selectedCard.template.name}
+                </p>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <RarityBadge rarity={selectedCard.template.rarity as CardRarity} />
+                  <span className="text-xs text-muted-foreground">Level {selectedCard.level}</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {selectedCard && (
-          <p className="text-xs text-zinc-500">
-            This will permanently destroy the card.
-          </p>
-        )}
+          {selectedCard && (
+            <p className="text-xs text-muted-foreground">
+              This will permanently destroy the card.
+            </p>
+          )}
 
-        <button
-          onClick={handleDestroy}
-          disabled={!selectedCardId || isPending}
-          className="rounded-md bg-red-700 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {isPending ? "Destroying…" : "Destroy"}
-        </button>
-      </div>
+          <AlertDialog>
+            <AlertDialogTrigger
+              render={
+                <Button
+                  variant="destructive"
+                  disabled={!selectedCardId || isPending}
+                >
+                  {isPending ? "Destroying…" : "Destroy"}
+                </Button>
+              }
+            />
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Destroy card?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {selectedCard
+                    ? `This will permanently destroy "${selectedCard.template.name}" and convert it to dust. This action cannot be undone.`
+                    : "This action cannot be undone."}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={handleDestroy}
+                >
+                  Destroy
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
 
       {/* ── Craft placeholder ────────────────────────────────────────── */}
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="text-base font-semibold text-white">Craft Cards</h2>
-        <p className="mt-2 text-sm text-zinc-500">Craft cards coming soon.</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Craft Cards</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">Craft cards coming soon.</p>
+        </CardContent>
+      </Card>
 
       {/* ── History section ──────────────────────────────────────────── */}
-      <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-white">Transaction History</h2>
-          <span className="text-xs text-zinc-500">{historyTotal} total</span>
-        </div>
-
-        {history.length === 0 ? (
-          <p className="text-sm text-zinc-500">No transactions yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-800 text-left">
-                  <th className="pb-2 pr-4 text-xs font-medium text-zinc-400">Date</th>
-                  <th className="pb-2 pr-4 text-xs font-medium text-zinc-400">Reason</th>
-                  <th className="pb-2 pr-4 text-right text-xs font-medium text-zinc-400">
-                    Amount
-                  </th>
-                  <th className="pb-2 text-right text-xs font-medium text-zinc-400">
-                    Balance After
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Transaction History</CardTitle>
+            <span className="text-xs text-muted-foreground">{historyTotal} total</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {history.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No transactions yet.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Date</TableHead>
+                  <TableHead className="text-xs">Reason</TableHead>
+                  <TableHead className="text-right text-xs">Amount</TableHead>
+                  <TableHead className="text-right text-xs">Balance After</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {history.map((tx) => (
-                  <tr key={tx.id} className="border-b border-zinc-800/50 last:border-0">
-                    <td className="py-2 pr-4 text-xs text-zinc-400">
+                  <TableRow key={tx.id}>
+                    <TableCell className="text-xs text-muted-foreground">
                       {new Date(tx.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="py-2 pr-4 text-xs capitalize text-zinc-300">
+                    </TableCell>
+                    <TableCell className="text-xs capitalize text-foreground/80">
                       {tx.reason.replace(/_/g, " ")}
-                    </td>
-                    <td
-                      className={`py-2 pr-4 text-right text-xs font-medium tabular-nums ${
-                        tx.amount >= 0 ? "text-green-400" : "text-red-400"
-                      }`}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "text-right text-xs font-medium tabular-nums",
+                        tx.amount >= 0 ? "text-green-400" : "text-destructive"
+                      )}
                     >
                       {tx.amount >= 0 ? "+" : ""}
                       {tx.amount}
-                    </td>
-                    <td className="py-2 text-right text-xs text-zinc-300 tabular-nums">
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-foreground/80 tabular-nums">
                       {tx.balanceAfter.toLocaleString()}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

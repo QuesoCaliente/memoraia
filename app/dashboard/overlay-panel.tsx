@@ -2,6 +2,22 @@
 
 import { useState } from "react";
 import { regenerateOverlayKey, testOverlayRedemption } from "@/app/actions/overlay";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Copy, Check, RefreshCw, Zap } from "lucide-react";
 
 interface OverlayPanelProps {
   initialKey: string;
@@ -22,7 +38,7 @@ export function OverlayPanel({ initialKey, initialUrl }: OverlayPanelProps) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  async function regenerateKey() {
+  async function handleRegenerate() {
     setRegenerating(true);
     try {
       const result = await regenerateOverlayKey();
@@ -64,59 +80,63 @@ export function OverlayPanel({ initialKey, initialUrl }: OverlayPanelProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-white">Overlay</h2>
+      <h2 className="text-lg font-semibold">Overlay</h2>
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm text-zinc-400">URL del overlay (para OBS)</label>
+        <Label>URL del overlay (para OBS)</Label>
         <div className="flex gap-2">
-          <input
-            type="text"
-            readOnly
-            value={overlayUrl}
-            className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 outline-none"
-          />
-          <button
-            onClick={copyUrl}
-            className="rounded-md bg-zinc-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-600"
-          >
-            {copied ? "Copiado!" : "Copiar"}
-          </button>
+          <Input readOnly value={overlayUrl} className="flex-1 font-mono text-xs" />
+          <Button variant="secondary" size="icon" onClick={copyUrl}>
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <label className="text-sm text-zinc-400">Overlay Key</label>
-        <code className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-400">
+        <Label>Overlay Key</Label>
+        <code className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground font-mono">
           {overlayKey}
         </code>
       </div>
 
       <div className="flex gap-3">
-        <button
-          onClick={testRedemption}
-          disabled={testing}
-          className="self-start rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700 disabled:opacity-50"
-        >
+        <Button onClick={testRedemption} disabled={testing}>
+          <Zap className="mr-2 h-4 w-4" />
           {testing ? "Enviando..." : "Probar Redemption"}
-        </button>
+        </Button>
 
-        <button
-          onClick={regenerateKey}
-          disabled={regenerating}
-          className="self-start rounded-md border border-red-800 bg-transparent px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-950 disabled:opacity-50"
-        >
-          {regenerating ? "Regenerando..." : "Regenerar Key"}
-        </button>
+        <AlertDialog>
+          <AlertDialogTrigger
+            render={
+              <Button variant="destructive" disabled={regenerating}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                {regenerating ? "Regenerando..." : "Regenerar Key"}
+              </Button>
+            }
+          />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Regenerar overlay key?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esto invalidará la key anterior. Las conexiones activas seguirán
+                funcionando hasta que se desconecten.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleRegenerate}>
+                Regenerar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {testResult && (
-        <p className="text-sm text-zinc-400">{testResult}</p>
+        <Alert>
+          <AlertDescription>{testResult}</AlertDescription>
+        </Alert>
       )}
-
-      <p className="text-xs text-zinc-500">
-        Regenerar invalida la key anterior. Las conexiones activas seguirán
-        funcionando hasta que se desconecten.
-      </p>
     </div>
   );
 }

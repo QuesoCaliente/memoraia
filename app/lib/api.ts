@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { authFetch } from "./auth-fetch";
@@ -35,7 +36,7 @@ async function clearTokenAndRedirect(): Promise<never> {
   redirect("/");
 }
 
-export async function getMe(): Promise<User> {
+export const getMe = cache(async function getMe(): Promise<User> {
   const result = await authFetch<User>("/auth/me");
   if (!result.ok) {
     if (result.error.code === "NO_TOKEN" || result.error.code === "UNAUTHORIZED") {
@@ -44,7 +45,7 @@ export async function getMe(): Promise<User> {
     throw new Error(`Failed to fetch user: ${result.error.code}`);
   }
   return result.data;
-}
+});
 
 export async function updateProfile(
   payload: UpdateProfilePayload

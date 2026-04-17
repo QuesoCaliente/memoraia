@@ -7,9 +7,9 @@ export default async function FusePage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Fuse Cards</h1>
+        <h1 className="text-2xl font-bold text-foreground">Fusionar cartas</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Select a target card, then choose 1-5 cards of the same type as materials. Materials are destroyed and their XP transfers to the target.
+          Seleccioná una carta objetivo y elegí entre 1 y 5 cartas del mismo tipo como materiales. Los materiales se destruyen y su XP se transfiere al objetivo.
         </p>
       </div>
       <FuseForm cards={inventory.data} />

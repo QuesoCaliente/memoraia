@@ -9,7 +9,12 @@ export default async function MissionsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">Missions</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Misiones</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Completá misiones para ganar polvo y cartas exclusivas.
+        </p>
+      </div>
       <MissionBoard missions={missions.data} myMissions={myMissions.data} />
     </div>
   );

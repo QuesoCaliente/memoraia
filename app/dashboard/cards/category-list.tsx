@@ -7,7 +7,8 @@ import { CategoryForm } from "./category-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { FolderPlus } from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -28,12 +29,6 @@ export function CategoryList({ initialCategories }: CategoryListProps) {
   const [categories, setCategories] = useState<CardCategory[]>(initialCategories);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  function showError(msg: string) {
-    setError(msg);
-    setTimeout(() => setError(null), 4000);
-  }
 
   async function handleDelete(id: string) {
     setDeletingId(id);
@@ -45,13 +40,14 @@ export function CategoryList({ initialCategories }: CategoryListProps) {
           return;
         }
         if (result.error === "has_templates") {
-          showError("Cannot delete: this category has templates assigned to it.");
+          toast.error("No se puede eliminar: esta categoría tiene templates asignados.");
         } else {
-          showError("Failed to delete category. Please try again.");
+          toast.error("No se pudo eliminar la categoría. Intentá de nuevo.");
         }
         return;
       }
       setCategories((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Categoría eliminada");
     } finally {
       setDeletingId(null);
     }
@@ -74,20 +70,26 @@ export function CategoryList({ initialCategories }: CategoryListProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-foreground">Categories</h2>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+      <h2 className="text-lg font-semibold text-foreground">Categorías</h2>
 
       {categories.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No categories yet.</p>
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-12 text-center">
+          <FolderPlus className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium text-foreground">No hay categorías</p>
+            <p className="text-sm text-muted-foreground">
+              Creá tu primera categoría para organizar tus cartas
+            </p>
+          </div>
+        </div>
       ) : (
         <div className="flex flex-col gap-2">
           {categories.map((category) => (
-            <Card key={category.id} size="sm">
+            <Card
+              key={category.id}
+              size="sm"
+              className="transition-all duration-200 hover:shadow-sm"
+            >
               <CardContent>
                 {editingId === category.id ? (
                   <CategoryForm
@@ -101,7 +103,7 @@ export function CategoryList({ initialCategories }: CategoryListProps) {
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-foreground">{category.name}</span>
                         <Badge variant={category.origin === "system" ? "secondary" : "outline"}>
-                          {category.origin === "system" ? "System" : "Custom"}
+                          {category.origin === "system" ? "Sistema" : "Personalizada"}
                         </Badge>
                       </div>
                       {category.description && (
@@ -115,7 +117,7 @@ export function CategoryList({ initialCategories }: CategoryListProps) {
                         onClick={() => setEditingId(category.id)}
                         disabled={isPending}
                       >
-                        Edit
+                        Editar
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger
@@ -127,23 +129,24 @@ export function CategoryList({ initialCategories }: CategoryListProps) {
                             />
                           }
                         >
-                          Delete
+                          Eliminar
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete category?</AlertDialogTitle>
+                            <AlertDialogTitle>¿Eliminar categoría?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently delete &quot;{category.name}&quot;. This action cannot be undone.
+                              Esto eliminará permanentemente &quot;{category.name}&quot;. Esta acción no se puede deshacer.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
                               variant="destructive"
                               disabled={deletingId === category.id}
+                              aria-busy={deletingId === category.id}
                               onClick={() => handleDelete(category.id)}
                             >
-                              {deletingId === category.id ? "Deleting..." : "Delete"}
+                              {deletingId === category.id ? "Eliminando..." : "Eliminar"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -159,7 +162,7 @@ export function CategoryList({ initialCategories }: CategoryListProps) {
 
       <Card size="sm">
         <CardHeader>
-          <CardTitle>New Category</CardTitle>
+          <CardTitle>Nueva categoría</CardTitle>
         </CardHeader>
         <CardContent>
           <CategoryForm onSave={handleSaved} />

@@ -7,10 +7,10 @@ export default async function PhysicalCardsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground">Physical Cards</h1>
+        <h1 className="text-2xl font-bold text-foreground">Cartas Físicas</h1>
         <p className="text-sm text-muted-foreground">
-          Request physical versions of your digital cards. Track your orders
-          below.
+          Solicitá versiones físicas de tus cartas digitales. Seguí tus pedidos
+          a continuación.
         </p>
       </div>
       <PhysicalCardList

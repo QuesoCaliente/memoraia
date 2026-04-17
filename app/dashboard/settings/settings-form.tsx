@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -21,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckIcon, TriangleAlertIcon } from "lucide-react";
+import { toast } from "sonner";
 
 interface SettingsFormProps {
   user: User;
@@ -32,13 +31,13 @@ interface SettingsFormProps {
 function mapFormError(error: string): string {
   switch (error) {
     case "conflict":
-      return "This slug is already taken. Please choose another.";
+      return "Este slug ya está en uso. Elegí otro.";
     case "forbidden":
-      return "Streamer permissions required.";
+      return "Se requieren permisos de streamer.";
     case "unauthorized":
-      return "Session expired. Please log in again.";
+      return "Sesión expirada. Por favor, iniciá sesión nuevamente.";
     default:
-      return "Something went wrong. Please try again.";
+      return "Algo salió mal. Intentá de nuevo.";
   }
 }
 
@@ -55,8 +54,6 @@ export function SettingsForm({
   );
 
   const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const initial = {
     displayName: user.displayName,
@@ -67,8 +64,6 @@ export function SettingsForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSuccess(false);
 
     const payload: Record<string, string | null> = {};
     if (displayName !== initial.displayName) payload.displayName = displayName;
@@ -80,8 +75,7 @@ export function SettingsForm({
     }
 
     if (Object.keys(payload).length === 0) {
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.info("No hay cambios para guardar");
       return;
     }
 
@@ -95,12 +89,10 @@ export function SettingsForm({
           window.location.href = "/";
           return;
         }
-        setError(mapFormError(result.error));
-        setTimeout(() => setError(null), 4000);
+        toast.error(mapFormError(result.error));
         return;
       }
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success("Cambios guardados");
     } finally {
       setIsPending(false);
     }
@@ -110,30 +102,30 @@ export function SettingsForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Profile
+          <CardTitle className="text-sm font-medium text-foreground">
+            Perfil
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="displayName">Display Name</Label>
+            <Label htmlFor="displayName">Nombre</Label>
             <Input
               id="displayName"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Your display name"
+              placeholder="Tu nombre de usuario"
               disabled={isPending}
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="streamerBio">Bio</Label>
+            <Label htmlFor="streamerBio">Biografía</Label>
             <Textarea
               id="streamerBio"
               value={streamerBio}
               onChange={(e) => setStreamerBio(e.target.value)}
-              placeholder="Tell viewers about yourself"
+              placeholder="Contale a los espectadores sobre vos"
               rows={3}
               disabled={isPending}
             />
@@ -146,7 +138,7 @@ export function SettingsForm({
               type="text"
               value={streamerSlug}
               onChange={(e) => setStreamerSlug(e.target.value)}
-              placeholder="your-unique-slug"
+              placeholder="tu-slug-unico"
               disabled={isPending}
             />
           </div>
@@ -155,62 +147,54 @@ export function SettingsForm({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Card Drop Reward
+          <CardTitle className="text-sm font-medium text-foreground">
+            Recompensa de carta
           </CardTitle>
         </CardHeader>
         <CardContent>
           {affiliateRequired ? (
             <p className="text-sm text-muted-foreground">
-              Channel Point Rewards require Twitch Affiliate or Partner status.
-              Become an Affiliate to configure a reward trigger for card drops.
+              Las recompensas de puntos de canal requieren ser Afiliado o
+              Partner de Twitch. Convertite en Afiliado para configurar una
+              recompensa que active drops de cartas.
             </p>
           ) : (
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cardDropRewardId">Trigger Reward</Label>
+              <Label htmlFor="cardDropRewardId">Recompensa activadora</Label>
               <Select
                 value={cardDropRewardId}
                 onValueChange={(value) => setCardDropRewardId(value ?? "")}
                 disabled={isPending}
               >
                 <SelectTrigger id="cardDropRewardId" className="w-full">
-                  <SelectValue placeholder="— None —" />
+                  <SelectValue placeholder="— Ninguna —" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">— None —</SelectItem>
+                  <SelectItem value="">— Ninguna —</SelectItem>
                   {rewards.map((r) => (
                     <SelectItem key={r.id} value={r.id}>
-                      {r.title} ({r.cost} points)
+                      {r.title} ({r.cost} puntos)
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                When a viewer redeems this reward, a card drop will be
-                triggered.
+                Cuando un espectador canjee esta recompensa, se activará un
+                drop de carta.
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {error && (
-        <Alert variant="destructive">
-          <TriangleAlertIcon />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert>
-          <CheckIcon />
-          <AlertDescription>Settings saved successfully.</AlertDescription>
-        </Alert>
-      )}
-
       <div>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Saving..." : "Save Settings"}
+        <Button
+          type="submit"
+          disabled={isPending}
+          aria-busy={isPending}
+          className="transition-all duration-200"
+        >
+          {isPending ? "Guardando…" : "Guardar cambios"}
         </Button>
       </div>
     </form>

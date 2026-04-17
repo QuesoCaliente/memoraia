@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { claimMissionReward } from "@/app/actions/missions";
 import type { Mission, UserMission, MissionType } from "@/app/types/cards";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,7 +16,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MissionBoardProps {
@@ -24,33 +25,41 @@ interface MissionBoardProps {
 }
 
 const TABS: { label: string; value: MissionType }[] = [
-  { label: "Daily", value: "daily" },
-  { label: "Weekly", value: "weekly" },
-  { label: "Special", value: "special" },
+  { label: "Diarias", value: "daily" },
+  { label: "Semanales", value: "weekly" },
+  { label: "Especiales", value: "special" },
 ];
 
-const TYPE_BADGE_VARIANT: Record<
-  MissionType,
-  { className: string }
-> = {
-  daily: { className: "bg-blue-900/60 text-blue-300 border-blue-800" },
-  weekly: { className: "bg-purple-900/60 text-purple-300 border-purple-800" },
-  special: { className: "bg-amber-900/60 text-amber-300 border-amber-800" },
+const TYPE_BADGE_VARIANT: Record<MissionType, { className: string }> = {
+  daily: { className: "text-primary border-primary/30" },
+  weekly: { className: "text-chart-5 border-chart-5/30" },
+  special: { className: "text-chart-4 border-chart-4/30" },
+};
+
+const EMPTY_STATE: Record<MissionType, { heading: string; description: string }> = {
+  daily: {
+    heading: "Volvé mañana",
+    description: "No hay misiones diarias disponibles por ahora.",
+  },
+  weekly: {
+    heading: "Próximamente",
+    description: "No hay misiones semanales disponibles en este momento.",
+  },
+  special: {
+    heading: "Próximamente",
+    description: "No hay misiones especiales disponibles en este momento.",
+  },
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
-  not_claimable: "Mission not completed yet or already claimed",
-  unauthorized: "Session expired. Please log in again.",
-  not_found: "Mission not found.",
-  server_error: "Something went wrong. Please try again.",
+  not_claimable: "La misión aún no está completada o ya fue reclamada.",
+  unauthorized: "Sesión expirada. Por favor, iniciá sesión nuevamente.",
+  not_found: "Misión no encontrada.",
+  server_error: "Algo salió mal. Por favor, intentá de nuevo.",
 };
 
 export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
   const router = useRouter();
-  const [claimErrors, setClaimErrors] = useState<Record<string, string>>({});
-  const [claimSuccesses, setClaimSuccesses] = useState<
-    Record<string, { type: string; amount: number; cardName: string | null }>
-  >({});
   const [, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -60,7 +69,6 @@ export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
 
   function handleClaim(missionId: string) {
     setPendingId(missionId);
-    setClaimErrors((prev) => ({ ...prev, [missionId]: "" }));
 
     startTransition(async () => {
       const res = await claimMissionReward(missionId);
@@ -71,32 +79,31 @@ export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
           router.push("/");
           return;
         }
-        setClaimErrors((prev) => ({
-          ...prev,
-          [missionId]: ERROR_MESSAGES[res.error] ?? ERROR_MESSAGES.server_error,
-        }));
+        toast.error(ERROR_MESSAGES[res.error] ?? ERROR_MESSAGES.server_error);
         return;
       }
 
-      setClaimSuccesses((prev) => ({
-        ...prev,
-        [missionId]: {
-          type: res.data.reward.type,
-          amount: res.data.reward.amount,
-          cardName: res.data.reward.card?.template.name ?? null,
-        },
-      }));
+      const reward = res.data.reward;
+      const rewardLabel =
+        reward.type === "dust"
+          ? `${reward.amount} polvo`
+          : (reward.card?.template.name ?? "Carta");
+
+      toast.success(`¡Recompensa recibida! Obtuviste ${rewardLabel}`);
     });
   }
 
   function renderMissionList(type: MissionType) {
     const filtered = missions.filter((m) => m.missionType === type);
+    const emptyState = EMPTY_STATE[type];
 
     if (filtered.length === 0) {
       return (
-        <p className="text-sm text-muted-foreground">
-          No {type} missions available.
-        </p>
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <Target aria-hidden="true" className="h-8 w-8 text-muted-foreground/50" />
+          <h3 className="text-sm font-semibold text-foreground">{emptyState.heading}</h3>
+          <p className="text-xs text-muted-foreground">{emptyState.description}</p>
+        </div>
       );
     }
 
@@ -106,12 +113,10 @@ export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
           const userMission = getUserMission(mission.id);
           const status = userMission?.status;
           const isLoading = pendingId === mission.id;
-          const claimError = claimErrors[mission.id];
-          const claimSuccess = claimSuccesses[mission.id];
           const badgeStyle = TYPE_BADGE_VARIANT[mission.missionType];
 
           return (
-            <Card key={mission.id} size="sm">
+            <Card key={mission.id} size="sm" className="transition-all duration-200">
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -119,15 +124,19 @@ export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
                       variant="outline"
                       className={cn("capitalize", badgeStyle.className)}
                     >
-                      {mission.missionType}
+                      {mission.missionType === "daily"
+                        ? "Diaria"
+                        : mission.missionType === "weekly"
+                        ? "Semanal"
+                        : "Especial"}
                     </Badge>
                     <CardTitle>{mission.name}</CardTitle>
                   </div>
                   <div className="shrink-0 text-right">
-                    <span className="text-xs font-medium text-amber-400">
+                    <span className="text-xs font-medium text-primary">
                       {mission.rewardType === "dust"
-                        ? `${mission.rewardAmount} dust`
-                        : "Card reward"}
+                        ? `${mission.rewardAmount} polvo`
+                        : "Recompensa: carta"}
                     </span>
                   </div>
                 </div>
@@ -139,7 +148,7 @@ export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
                   {status === "in_progress" && (
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Progress</span>
+                        <span>Progreso</span>
                         <span>{userMission.progress}%</span>
                       </div>
                       <Progress value={Math.min(userMission.progress, 100)} />
@@ -148,11 +157,11 @@ export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
 
                   <div className="flex items-center gap-3">
                     {status === "in_progress" && (
-                      <Badge variant="secondary">In Progress</Badge>
+                      <Badge variant="secondary">En progreso</Badge>
                     )}
                     {status === "completed" && (
-                      <Badge className="bg-green-900/60 text-green-300 border-green-800">
-                        Completed
+                      <Badge variant="outline" className="text-primary border-primary/30">
+                        Completada
                       </Badge>
                     )}
                     {status === "claimed" && (
@@ -160,48 +169,21 @@ export function MissionBoard({ missions, myMissions }: MissionBoardProps) {
                         variant="outline"
                         className="text-muted-foreground line-through"
                       >
-                        Claimed
+                        Reclamada
                       </Badge>
                     )}
 
                     {status === "completed" && (
                       <Button
                         size="xs"
-                        variant="secondary"
                         onClick={() => handleClaim(mission.id)}
                         disabled={isLoading}
-                        className="bg-green-700 text-white hover:bg-green-600"
+                        aria-busy={isLoading}
                       >
-                        {isLoading ? "Claiming…" : "Claim"}
+                        {isLoading ? "Reclamando…" : "Reclamar"}
                       </Button>
                     )}
                   </div>
-                </CardContent>
-              )}
-
-              {(claimError || claimSuccess) && (
-                <CardContent className="pt-0">
-                  {claimError && (
-                    <Alert variant="destructive">
-                      <AlertDescription>{claimError}</AlertDescription>
-                    </Alert>
-                  )}
-                  {claimSuccess && (
-                    <Alert>
-                      <AlertDescription>
-                        Reward received:{" "}
-                        {claimSuccess.type === "dust" ? (
-                          <span className="font-medium text-foreground">
-                            {claimSuccess.amount} dust
-                          </span>
-                        ) : (
-                          <span className="font-medium text-foreground">
-                            {claimSuccess.cardName ?? "Card"}
-                          </span>
-                        )}
-                      </AlertDescription>
-                    </Alert>
-                  )}
                 </CardContent>
               )}
             </Card>

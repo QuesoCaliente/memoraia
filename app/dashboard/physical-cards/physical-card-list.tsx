@@ -8,15 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TriangleAlertIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CreditCard } from "lucide-react";
+import { toast } from "sonner";
 
 interface PhysicalCardListProps {
   initialRequests: PhysicalCard[];
@@ -34,12 +33,20 @@ const STATUS_VARIANT: Record<
   rejected: "destructive",
 };
 
+const STATUS_LABEL: Record<PhysicalCardStatus, string> = {
+  pending: "Pendiente",
+  approved: "Aprobada",
+  shipped: "Enviada",
+  delivered: "Entregada",
+  rejected: "Rechazada",
+};
+
 const ERROR_MESSAGES: Record<string, string> = {
-  already_requested: "A physical card request already exists for this card",
-  inactive_card: "This card is not active",
-  forbidden: "You don't own this card",
-  unauthorized: "Session expired. Please log in again.",
-  server_error: "Something went wrong. Please try again.",
+  already_requested: "Ya existe una solicitud de carta física para esta carta",
+  inactive_card: "Esta carta no está activa",
+  forbidden: "No sos el dueño de esta carta",
+  unauthorized: "Sesión expirada. Por favor, iniciá sesión nuevamente.",
+  server_error: "Algo salió mal. Intentá de nuevo.",
 };
 
 const EMPTY_SHIPPING = { name: "", address: "", city: "", country: "" };
@@ -52,7 +59,6 @@ export function PhysicalCardList({
   const [requests, setRequests] = useState<PhysicalCard[]>(initialRequests);
   const [userCardId, setUserCardId] = useState("");
   const [shipping, setShipping] = useState(EMPTY_SHIPPING);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleShippingChange(field: keyof typeof shipping, value: string) {
@@ -61,7 +67,6 @@ export function PhysicalCardList({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitError(null);
 
     startTransition(async () => {
       const result = await requestPhysicalCard({
@@ -74,15 +79,14 @@ export function PhysicalCardList({
           router.push("/");
           return;
         }
-        setSubmitError(
-          ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error
-        );
+        toast.error(ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error);
         return;
       }
 
       setRequests((prev) => [result.data, ...prev]);
       setUserCardId("");
       setShipping(EMPTY_SHIPPING);
+      toast.success("Solicitud enviada");
     });
   }
 
@@ -91,29 +95,30 @@ export function PhysicalCardList({
       {/* Request form */}
       <Card>
         <CardHeader>
-          <CardTitle>Request a Physical Card</CardTitle>
+          <CardTitle>Solicitar Carta Física</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="userCardId">Card ID</Label>
+              <Label htmlFor="userCardId">ID de carta</Label>
               <Input
                 id="userCardId"
                 type="text"
                 value={userCardId}
                 onChange={(e) => setUserCardId(e.target.value)}
                 required
-                placeholder="Enter your card ID"
+                disabled={isPending}
+                placeholder="Ingresá el ID de tu carta"
               />
             </div>
 
             <fieldset className="space-y-3">
               <legend className="text-sm font-medium text-foreground">
-                Shipping Information
+                Información de envío
               </legend>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="shippingName">Full Name</Label>
+                  <Label htmlFor="shippingName">Nombre completo</Label>
                   <Input
                     id="shippingName"
                     type="text"
@@ -122,11 +127,12 @@ export function PhysicalCardList({
                       handleShippingChange("name", e.target.value)
                     }
                     required
-                    placeholder="John Doe"
+                    disabled={isPending}
+                    placeholder="Juan Pérez"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="shippingCountry">Country</Label>
+                  <Label htmlFor="shippingCountry">País</Label>
                   <Input
                     id="shippingCountry"
                     type="text"
@@ -135,11 +141,12 @@ export function PhysicalCardList({
                       handleShippingChange("country", e.target.value)
                     }
                     required
-                    placeholder="US"
+                    disabled={isPending}
+                    placeholder="AR"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="shippingAddress">Address</Label>
+                  <Label htmlFor="shippingAddress">Dirección</Label>
                   <Input
                     id="shippingAddress"
                     type="text"
@@ -148,11 +155,12 @@ export function PhysicalCardList({
                       handleShippingChange("address", e.target.value)
                     }
                     required
-                    placeholder="123 Main St"
+                    disabled={isPending}
+                    placeholder="Av. Corrientes 1234"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="shippingCity">City</Label>
+                  <Label htmlFor="shippingCity">Ciudad</Label>
                   <Input
                     id="shippingCity"
                     type="text"
@@ -161,21 +169,20 @@ export function PhysicalCardList({
                       handleShippingChange("city", e.target.value)
                     }
                     required
-                    placeholder="Springfield"
+                    disabled={isPending}
+                    placeholder="Buenos Aires"
                   />
                 </div>
               </div>
             </fieldset>
 
-            {submitError && (
-              <Alert variant="destructive">
-                <TriangleAlertIcon />
-                <AlertDescription>{submitError}</AlertDescription>
-              </Alert>
-            )}
-
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Submitting…" : "Request Physical Card"}
+            <Button
+              type="submit"
+              disabled={isPending}
+              aria-busy={isPending}
+              className="transition-all duration-200"
+            >
+              {isPending ? "Enviando…" : "Solicitar Carta Física"}
             </Button>
           </form>
         </CardContent>
@@ -184,16 +191,20 @@ export function PhysicalCardList({
       {/* Requests list */}
       <div className="space-y-4">
         <h2 className="text-base font-semibold text-foreground">
-          Your Requests{" "}
+          Tus solicitudes{" "}
           <span className="text-sm font-normal text-muted-foreground">
             ({total})
           </span>
         </h2>
 
         {requests.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No physical card requests yet.
-          </p>
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
+            <CreditCard className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-foreground">Sin solicitudes</p>
+              <p className="text-xs text-muted-foreground">Solicitá tu primera carta física</p>
+            </div>
+          </div>
         ) : (
           <div className="space-y-3">
             {requests.map((req) => (
@@ -202,21 +213,21 @@ export function PhysicalCardList({
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 space-y-1">
                       <p className="text-xs text-muted-foreground">
-                        Card ID:{" "}
+                        ID de carta:{" "}
                         <span className="font-mono text-foreground">
                           {req.userCardId}
                         </span>
                       </p>
                       {req.verificationCode && (
                         <p className="text-xs text-muted-foreground">
-                          Verification Code:{" "}
+                          Código de verificación:{" "}
                           <span className="font-mono text-foreground">
                             {req.verificationCode}
                           </span>
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        {new Date(req.createdAt).toLocaleDateString(undefined, {
+                        {new Date(req.createdAt).toLocaleDateString("es", {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
@@ -225,9 +236,9 @@ export function PhysicalCardList({
                     </div>
                     <Badge
                       variant={STATUS_VARIANT[req.status]}
-                      className="shrink-0 capitalize"
+                      className="shrink-0"
                     >
-                      {req.status}
+                      {STATUS_LABEL[req.status]}
                     </Badge>
                   </div>
                 </CardContent>

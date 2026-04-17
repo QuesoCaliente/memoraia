@@ -8,7 +8,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+      <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
       <SettingsForm
         user={user}
         rewards={rewards}

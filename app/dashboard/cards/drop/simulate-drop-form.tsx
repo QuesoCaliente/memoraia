@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -27,38 +27,38 @@ export function SimulateDropForm() {
   const [userId, setUserId] = useState("");
   const [tier, setTier] = useState<SubscriptionTier>("1000");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SimulateDropResponse | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     setResult(null);
 
-    const res = await simulateDrop({ userId, tier });
+    try {
+      const res = await simulateDrop({ userId, tier });
 
-    if (res.ok) {
-      setResult(res.data);
-    } else {
-      const messages: Record<string, string> = {
-        unauthorized: "Sesión expirada. Volvé a iniciar sesión.",
-        forbidden: "Se requiere admin + streamer habilitado.",
-        user_not_found: "Usuario no encontrado.",
-        empty_pool: "No hay templates en el pool. Agregá cartas primero.",
-        server_error: "Error del servidor. Intentá de nuevo.",
-      };
-      setError(messages[res.error] ?? messages.server_error);
+      if (res.ok) {
+        setResult(res.data);
+      } else {
+        const messages: Record<string, string> = {
+          unauthorized: "Sesión expirada. Volvé a iniciar sesión.",
+          forbidden: "Se requiere admin + streamer habilitado.",
+          user_not_found: "Usuario no encontrado.",
+          empty_pool: "No hay templates en el pool. Agregá cartas primero.",
+          server_error: "Error del servidor. Intentá de nuevo.",
+        };
+        toast.error(messages[res.error] ?? messages.server_error);
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="userId">User ID (UUID)</Label>
+          <Label htmlFor="userId">ID del viewer</Label>
           <Input
             id="userId"
             type="text"
@@ -91,16 +91,11 @@ export function SimulateDropForm() {
         <Button
           type="submit"
           disabled={loading || !userId.trim()}
+          aria-busy={loading}
         >
           {loading ? "Simulando..." : "Simular Drop"}
         </Button>
       </form>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
       {result && (
         <Card>
@@ -119,12 +114,12 @@ export function SimulateDropForm() {
               </span>
             </p>
             <div className="flex gap-4 pt-1">
-              <span className="text-red-400">ATK {result.attack}</span>
-              <span className="text-blue-400">DEF {result.defense}</span>
-              <span className="text-green-400">AGI {result.agility}</span>
+              <span className="text-destructive">ATK {result.attack}</span>
+              <span className="text-primary">DEF {result.defense}</span>
+              <span className="text-chart-2">AGI {result.agility}</span>
             </div>
             <p className="text-xs text-muted-foreground pt-1">
-              Card ID: {result.user_card_id}
+              ID de carta: {result.user_card_id}
             </p>
           </CardContent>
         </Card>

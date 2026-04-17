@@ -8,7 +8,7 @@ export default async function BattlesPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">Battles</h1>
+      <h1 className="text-2xl font-bold text-foreground">Batallas</h1>
       <BattleList initialBattles={battles.data} total={battles.total} />
     </div>
   );

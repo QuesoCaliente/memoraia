@@ -7,6 +7,8 @@ import { TemplateForm } from "./template-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FilePlus } from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -59,11 +61,13 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
           window.location.href = "/";
           return;
         }
+        toast.error("No se pudo eliminar el template");
         return;
       }
       setTemplates((prev) =>
         prev.map((t) => (t.id === id ? { ...t, isActive: false } : t))
       );
+      toast.success("Template desactivado");
     } finally {
       setDeletingId(null);
     }
@@ -75,20 +79,20 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {activeCount} active · {total} total
+          {activeCount} activos · {total} total
         </p>
         <Button
           variant={showCreateForm ? "outline" : "default"}
           onClick={() => setShowCreateForm((v) => !v)}
         >
-          {showCreateForm ? "Cancel" : "+ New Template"}
+          {showCreateForm ? "Cancelar" : "+ Nuevo template"}
         </Button>
       </div>
 
       {showCreateForm && (
         <Card>
           <CardHeader>
-            <CardTitle>New Template</CardTitle>
+            <CardTitle>Nuevo template</CardTitle>
           </CardHeader>
           <CardContent>
             <TemplateForm
@@ -101,7 +105,15 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
       )}
 
       {templates.length === 0 && (
-        <p className="text-center text-sm text-muted-foreground">No templates yet.</p>
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-12 text-center">
+          <FilePlus className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+          <div className="flex flex-col gap-1">
+            <p className="text-sm font-medium text-foreground">No hay templates</p>
+            <p className="text-sm text-muted-foreground">
+              Creá tu primer template de carta
+            </p>
+          </div>
+        </div>
       )}
 
       <div className="flex flex-col gap-4">
@@ -109,7 +121,7 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
           editingId === template.id ? (
             <Card key={template.id}>
               <CardHeader>
-                <CardTitle>Editing: {template.name}</CardTitle>
+                <CardTitle>Editando: {template.name}</CardTitle>
               </CardHeader>
               <CardContent>
                 <TemplateForm
@@ -123,10 +135,13 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
           ) : (
             <Card
               key={template.id}
-              className={cn(!template.isActive && "opacity-50")}
+              className={cn(
+                "transition-all duration-200 hover:shadow-sm",
+                !template.isActive && "opacity-50"
+              )}
             >
               <CardContent className="flex gap-4">
-                {/* Thumbnail */}
+                {/* Miniatura */}
                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
                   {template.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -137,7 +152,7 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                      No img
+                      Sin img
                     </div>
                   )}
                 </div>
@@ -160,13 +175,13 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
                       {template.rarity}
                     </Badge>
                     {!template.isActive && (
-                      <Badge variant="destructive" className="shrink-0">
-                        inactive
+                      <Badge variant="secondary" className="shrink-0">
+                        inactivo
                       </Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Category: {getCategoryName(template.categoryId)} · Origin:{" "}
+                    Categoría: {getCategoryName(template.categoryId)} · Origen:{" "}
                     {template.origin}
                   </p>
                   {template.description && (
@@ -176,7 +191,7 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
                   )}
                 </div>
 
-                {/* Actions */}
+                {/* Acciones */}
                 <div className="flex shrink-0 flex-col gap-2">
                   <Button
                     size="sm"
@@ -184,7 +199,7 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
                     onClick={() => setEditingId(template.id)}
                     disabled={!!deletingId}
                   >
-                    Edit
+                    Editar
                   </Button>
                   {template.isActive && (
                     <AlertDialog>
@@ -194,26 +209,28 @@ export function TemplateList({ initialTemplates, total, categories }: TemplateLi
                             size="sm"
                             variant="destructive"
                             disabled={deletingId === template.id}
+                            aria-busy={deletingId === template.id}
                           />
                         }
                       >
-                        {deletingId === template.id ? "..." : "Delete"}
+                        {deletingId === template.id ? "..." : "Eliminar"}
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete template?</AlertDialogTitle>
+                          <AlertDialogTitle>¿Eliminar template?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will deactivate &quot;{template.name}&quot;. This action cannot be undone.
+                            Esto desactivará &quot;{template.name}&quot;. Esta acción no se puede deshacer.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction
                             variant="destructive"
                             disabled={deletingId === template.id}
+                            aria-busy={deletingId === template.id}
                             onClick={() => handleDelete(template.id)}
                           >
-                            {deletingId === template.id ? "Deleting..." : "Delete"}
+                            {deletingId === template.id ? "Eliminando..." : "Eliminar"}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

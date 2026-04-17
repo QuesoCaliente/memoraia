@@ -11,7 +11,7 @@ export default async function TemplatesPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">Card Templates</h1>
+      <h1 className="text-2xl font-bold text-foreground">Templates de cartas</h1>
       <TemplateList
         initialTemplates={templatesResponse.data}
         total={templatesResponse.total}

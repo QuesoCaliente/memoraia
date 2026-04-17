@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { destroyCardForDust } from "@/app/actions/fusion";
 import type { CardRarity, DustTransaction, UserCard } from "@/app/types/cards";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Clock } from "lucide-react";
 import { RARITY_CONFIG } from "@/lib/rarity";
 import { cn } from "@/lib/utils";
 
@@ -45,11 +46,11 @@ interface DustPanelProps {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  forbidden: "You don't own this card",
-  undestroyable: "This card cannot be destroyed (inactive or legendary).",
-  not_found: "Card not found",
-  conflict: "This card is currently in use",
-  server_error: "Something went wrong. Please try again.",
+  forbidden: "No sos el dueño de esta carta.",
+  undestroyable: "Esta carta no se puede destruir (inactiva o legendaria).",
+  not_found: "Carta no encontrada.",
+  conflict: "Esta carta está actualmente en uso.",
+  server_error: "Algo salió mal. Por favor, intentá de nuevo.",
 };
 
 function RarityBadge({ rarity }: { rarity: CardRarity }) {
@@ -74,11 +75,6 @@ export function DustPanel({
   const [balance, setBalance] = useState(initialBalance);
   const [history, setHistory] = useState<DustTransaction[]>(initialHistory);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [destroyResult, setDestroyResult] = useState<{
-    dustGained: number;
-    cardName: string;
-  } | null>(null);
-  const [destroyError, setDestroyError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const selectedCard = cards.find((c) => c.id === selectedCardId) ?? null;
@@ -87,8 +83,6 @@ export function DustPanel({
     if (!selectedCardId) return;
 
     startTransition(async () => {
-      setDestroyError(null);
-      setDestroyResult(null);
       const res = await destroyCardForDust(selectedCardId);
       if (!res.ok) {
         if (res.error === "unauthorized") {
@@ -99,13 +93,14 @@ export function DustPanel({
           res.error === "invalid_fusion"
             ? ERROR_MESSAGES.undestroyable
             : (ERROR_MESSAGES[res.error] ?? ERROR_MESSAGES.server_error);
-        setDestroyError(msg);
+        toast.error(msg);
         return;
       }
-      const cardName = selectedCard?.template.name ?? "Card";
+
+      const cardName = selectedCard?.template.name ?? "Carta";
       setBalance(res.data.newBalance);
       setHistory((prev) => [res.data.transaction, ...prev]);
-      setDestroyResult({ dustGained: res.data.dustGained, cardName });
+      toast.success(`${cardName} destruida por ${res.data.dustGained} polvo`);
       setSelectedCardId(null);
     });
   }
@@ -116,59 +111,47 @@ export function DustPanel({
       <Card>
         <CardContent className="py-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Dust Balance
+            Saldo de polvo
           </p>
-          <p className="mt-2 text-5xl font-bold text-amber-400">{balance.toLocaleString()}</p>
+          <p className="mt-2 text-5xl font-bold text-primary">{balance.toLocaleString("es-AR")}</p>
         </CardContent>
       </Card>
 
       {/* ── Destroy section ─────────────────────────────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle>Destroy Card for Dust</CardTitle>
+          <CardTitle>Destruir carta por polvo</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {destroyResult && (
-            <Alert className="border-green-800 bg-green-950/40">
-              <AlertDescription className="text-green-300">
-                <span className="font-medium text-foreground">{destroyResult.cardName}</span>{" "}
-                destroyed for{" "}
-                <span className="font-medium text-foreground">{destroyResult.dustGained} dust</span>.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {destroyError && (
-            <Alert variant="destructive">
-              <AlertDescription>{destroyError}</AlertDescription>
-            </Alert>
-          )}
-
           {/* Card selector */}
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-muted-foreground">
-              Select a card to destroy
+              Seleccioná una carta para destruir
             </label>
-            <Select
-              value={selectedCardId ?? ""}
-              onValueChange={(value) => {
-                setSelectedCardId(value || null);
-                setDestroyError(null);
-                setDestroyResult(null);
-              }}
-              disabled={isPending}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="— Choose a card —" />
-              </SelectTrigger>
-              <SelectContent>
-                {cards.map((card) => (
-                  <SelectItem key={card.id} value={card.id}>
-                    {card.template.name} ({card.template.rarity}) — Lv. {card.level}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {cards.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No tenés cartas disponibles para destruir.
+              </p>
+            ) : (
+              <Select
+                value={selectedCardId ?? ""}
+                onValueChange={(value) => {
+                  setSelectedCardId(value || null);
+                }}
+                disabled={isPending}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="— Elegí una carta —" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cards.map((card) => (
+                    <SelectItem key={card.id} value={card.id}>
+                      {card.template.name} ({card.template.rarity}) — Nv. {card.level}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Selected card preview */}
@@ -190,7 +173,7 @@ export function DustPanel({
                 </p>
                 <div className="mt-0.5 flex items-center gap-2">
                   <RarityBadge rarity={selectedCard.template.rarity as CardRarity} />
-                  <span className="text-xs text-muted-foreground">Level {selectedCard.level}</span>
+                  <span className="text-xs text-muted-foreground">Nivel {selectedCard.level}</span>
                 </div>
               </div>
             </div>
@@ -198,7 +181,7 @@ export function DustPanel({
 
           {selectedCard && (
             <p className="text-xs text-muted-foreground">
-              This will permanently destroy the card.
+              Esta acción destruirá la carta de forma permanente.
             </p>
           )}
 
@@ -208,27 +191,28 @@ export function DustPanel({
                 <Button
                   variant="destructive"
                   disabled={!selectedCardId || isPending}
+                  aria-busy={isPending}
                 >
-                  {isPending ? "Destroying…" : "Destroy"}
+                  {isPending ? "Destruyendo…" : "Destruir"}
                 </Button>
               }
             />
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Destroy card?</AlertDialogTitle>
+                <AlertDialogTitle>¿Destruir carta?</AlertDialogTitle>
                 <AlertDialogDescription>
                   {selectedCard
-                    ? `This will permanently destroy "${selectedCard.template.name}" and convert it to dust. This action cannot be undone.`
-                    : "This action cannot be undone."}
+                    ? `Esto destruirá permanentemente "${selectedCard.template.name}" y la convertirá en polvo. Esta acción no se puede deshacer.`
+                    : "Esta acción no se puede deshacer."}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   variant="destructive"
                   onClick={handleDestroy}
                 >
-                  Destroy
+                  Destruir
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -237,41 +221,40 @@ export function DustPanel({
       </Card>
 
       {/* ── Craft placeholder ────────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Craft Cards</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Craft cards coming soon.</p>
-        </CardContent>
-      </Card>
+      <p className="text-xs text-muted-foreground">Próximamente: fabricación de cartas con polvo.</p>
 
       {/* ── History section ──────────────────────────────────────────── */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Transaction History</CardTitle>
-            <span className="text-xs text-muted-foreground">{historyTotal} total</span>
+            <CardTitle>Historial de transacciones</CardTitle>
+            <span className="text-xs text-muted-foreground">{historyTotal} en total</span>
           </div>
         </CardHeader>
         <CardContent>
           {history.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No transactions yet.</p>
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <Clock aria-hidden="true" className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-sm font-semibold text-foreground">Sin transacciones todavía</p>
+              <p className="text-xs text-muted-foreground">
+                Tus movimientos de polvo aparecerán acá.
+              </p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Date</TableHead>
-                  <TableHead className="text-xs">Reason</TableHead>
-                  <TableHead className="text-right text-xs">Amount</TableHead>
-                  <TableHead className="text-right text-xs">Balance After</TableHead>
+                  <TableHead className="text-xs">Fecha</TableHead>
+                  <TableHead className="text-xs">Motivo</TableHead>
+                  <TableHead className="text-right text-xs">Cantidad</TableHead>
+                  <TableHead className="text-right text-xs">Saldo tras operación</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {history.map((tx) => (
                   <TableRow key={tx.id}>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(tx.createdAt).toLocaleDateString()}
+                      {new Date(tx.createdAt).toLocaleDateString("es-AR")}
                     </TableCell>
                     <TableCell className="text-xs capitalize text-foreground/80">
                       {tx.reason.replace(/_/g, " ")}
@@ -279,14 +262,14 @@ export function DustPanel({
                     <TableCell
                       className={cn(
                         "text-right text-xs font-medium tabular-nums",
-                        tx.amount >= 0 ? "text-green-400" : "text-destructive"
+                        tx.amount >= 0 ? "text-primary" : "text-destructive"
                       )}
                     >
                       {tx.amount >= 0 ? "+" : ""}
                       {tx.amount}
                     </TableCell>
                     <TableCell className="text-right text-xs text-foreground/80 tabular-nums">
-                      {tx.balanceAfter.toLocaleString()}
+                      {tx.balanceAfter.toLocaleString("es-AR")}
                     </TableCell>
                   </TableRow>
                 ))}

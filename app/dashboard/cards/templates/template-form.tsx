@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -29,13 +29,13 @@ const ORIGINS: CardOrigin[] = ["streamer", "system"];
 function mapFormError(error: string): string {
   switch (error) {
     case "conflict":
-      return "A template with this name already exists.";
+      return "Ya existe un template con ese nombre.";
     case "forbidden":
-      return "Streamer permissions required.";
+      return "Se requieren permisos de streamer.";
     case "unauthorized":
-      return "Session expired. Please log in again.";
+      return "Sesión expirada. Volvé a iniciar sesión.";
     default:
-      return "Something went wrong. Please try again.";
+      return "Algo salió mal. Intentá de nuevo.";
   }
 }
 
@@ -49,7 +49,7 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
   const [categoryId, setCategoryId] = useState(template?.categoryId ?? "");
   const [description, setDescription] = useState(template?.description ?? "");
 
-  // Edit-only stat fields
+  // Campos de stats (solo en edición)
   const [baseAttack, setBaseAttack] = useState(String(template?.baseAttack ?? 0));
   const [baseDefense, setBaseDefense] = useState(String(template?.baseDefense ?? 0));
   const [baseAgility, setBaseAgility] = useState(String(template?.baseAgility ?? 0));
@@ -61,7 +61,6 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
     template?.maxSupply != null ? String(template.maxSupply) : ""
   );
 
-  const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -69,7 +68,6 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
     if (!name.trim() || !imageUrl.trim()) return;
 
     setIsPending(true);
-    setError(null);
 
     try {
       let result;
@@ -106,8 +104,7 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
           window.location.href = "/";
           return;
         }
-        setError(mapFormError(result.error));
-        setTimeout(() => setError(null), 4000);
+        toast.error(mapFormError(result.error));
         return;
       }
 
@@ -131,14 +128,14 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="tmpl-name">
-            Name <span className="text-destructive">*</span>
+            Nombre <span className="text-destructive">*</span>
           </Label>
           <Input
             id="tmpl-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Template name"
+            placeholder="Nombre del template"
             required
             disabled={isPending}
           />
@@ -146,7 +143,7 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="tmpl-image">
-            Image URL <span className="text-destructive">*</span>
+            URL de imagen <span className="text-destructive">*</span>
           </Label>
           <Input
             id="tmpl-image"
@@ -161,7 +158,7 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="tmpl-rarity">
-            Rarity <span className="text-destructive">*</span>
+            Rareza <span className="text-destructive">*</span>
           </Label>
           <Select
             value={rarity}
@@ -183,7 +180,7 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
 
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="tmpl-origin">
-            Origin <span className="text-destructive">*</span>
+            Origen <span className="text-destructive">*</span>
           </Label>
           <Select
             value={origin}
@@ -204,17 +201,17 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="tmpl-category">Category</Label>
+          <Label htmlFor="tmpl-category">Categoría</Label>
           <Select
             value={categoryId}
             onValueChange={(v) => setCategoryId(v ?? "")}
             disabled={isPending}
           >
             <SelectTrigger id="tmpl-category" className="w-full">
-              <SelectValue placeholder="— None —" />
+              <SelectValue placeholder="— Ninguna —" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">— None —</SelectItem>
+              <SelectItem value="">— Ninguna —</SelectItem>
               {categories.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}
@@ -226,12 +223,12 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="tmpl-desc">Description</Label>
+        <Label htmlFor="tmpl-desc">Descripción</Label>
         <Textarea
           id="tmpl-desc"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional description"
+          placeholder="Descripción opcional"
           rows={2}
           disabled={isPending}
           className="resize-none"
@@ -246,12 +243,12 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
           <div className="grid grid-cols-3 gap-3">
             {(
               [
-                ["Base ATK", baseAttack, setBaseAttack],
-                ["Base DEF", baseDefense, setBaseDefense],
-                ["Base AGI", baseAgility, setBaseAgility],
-                ["Growth ATK", growthAttack, setGrowthAttack],
-                ["Growth DEF", growthDefense, setGrowthDefense],
-                ["Growth AGI", growthAgility, setGrowthAgility],
+                ["ATK Base", baseAttack, setBaseAttack],
+                ["DEF Base", baseDefense, setBaseDefense],
+                ["AGI Base", baseAgility, setBaseAgility],
+                ["ATK Crecimiento", growthAttack, setGrowthAttack],
+                ["DEF Crecimiento", growthDefense, setGrowthDefense],
+                ["AGI Crecimiento", growthAgility, setGrowthAgility],
               ] as const
             ).map(([label, value, setter]) => (
               <div key={label} className="flex flex-col gap-1.5">
@@ -269,7 +266,7 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label>Drop Weight</Label>
+              <Label>Peso de drop</Label>
               <Input
                 type="number"
                 value={dropWeight}
@@ -280,14 +277,14 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label>Max Supply</Label>
+              <Label>Suministro máximo</Label>
               <Input
                 type="number"
                 value={maxSupply}
                 onChange={(e) => setMaxSupply(e.target.value)}
                 min={1}
                 step={1}
-                placeholder="Unlimited"
+                placeholder="Ilimitado"
                 disabled={isPending}
               />
             </div>
@@ -295,18 +292,13 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
         </div>
       )}
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="flex gap-2">
         <Button
           type="submit"
           disabled={isPending || !name.trim() || !imageUrl.trim()}
+          aria-busy={isPending}
         >
-          {isPending ? "Saving..." : isEditing ? "Save Changes" : "Add Template"}
+          {isPending ? "Guardando..." : isEditing ? "Guardar cambios" : "Agregar template"}
         </Button>
         {onCancel && (
           <Button
@@ -315,7 +307,7 @@ export function TemplateForm({ template, categories, onSave, onCancel }: Templat
             onClick={onCancel}
             disabled={isPending}
           >
-            Cancel
+            Cancelar
           </Button>
         )}
       </div>

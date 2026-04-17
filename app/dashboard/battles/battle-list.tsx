@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { resolveBattle } from "@/app/actions/battles";
 import type { Battle, ResolvedBattle } from "@/app/types/cards";
 import { CreateBattleForm } from "./create-battle-form";
@@ -9,10 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -20,8 +17,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TriangleAlertIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Swords, Clock } from "lucide-react";
+import { toast } from "sonner";
 
 interface BattleListProps {
   initialBattles: Battle[];
@@ -41,13 +38,6 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [resolvingId, setResolvingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!error) return;
-    const timer = setTimeout(() => setError(null), 4000);
-    return () => clearTimeout(timer);
-  }, [error]);
 
   function handleCreated(battle: Battle) {
     setPending((prev) => [battle, ...prev]);
@@ -56,11 +46,10 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
 
   async function handleResolve(battle: Battle, winnerCardId: string) {
     setResolvingId(battle.id);
-    setError(null);
     try {
       const result = await resolveBattle(battle.id, { winnerCardId });
       if (!result.ok) {
-        setError(mapResolveError(result.error));
+        toast.error(mapResolveError(result.error));
         return;
       }
       const resolved: ResolvedBattle = result.data;
@@ -73,6 +62,7 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
         },
         ...prev,
       ]);
+      toast.success("Batalla resuelta");
     } finally {
       setResolvingId(null);
     }
@@ -85,18 +75,16 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
       {/* Header row */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {pending.length} pending · {totalCount} total
+          {pending.length} pendientes · {totalCount} total
         </p>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger
-            render={<Button />}
-          >
-            + New Battle
+          <DialogTrigger render={<Button />}>
+            + Nueva Batalla
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>New Battle</DialogTitle>
+              <DialogTitle>Nueva Batalla</DialogTitle>
             </DialogHeader>
             <CreateBattleForm
               onSave={handleCreated}
@@ -106,22 +94,20 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
         </Dialog>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <Alert variant="destructive">
-          <TriangleAlertIcon />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       {/* Pending section */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Pending ({pending.length})
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+          Pendientes ({pending.length})
         </h2>
 
         {pending.length === 0 && (
-          <p className="text-sm text-muted-foreground">No pending battles.</p>
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
+            <Swords className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium text-foreground">Sin batallas pendientes</p>
+              <p className="text-xs text-muted-foreground">Creá una nueva batalla para comenzar.</p>
+            </div>
+          </div>
         )}
 
         {pending.map((battle) => (
@@ -130,12 +116,12 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col gap-1">
                   <p className="text-sm text-foreground">
-                    <span className="font-medium text-primary">Challenger</span>{" "}
+                    <span className="font-medium text-primary">Retador</span>{" "}
                     <span className="font-mono text-xs text-muted-foreground">
                       {battle.challengerCardId}
                     </span>{" "}
                     <span className="text-muted-foreground">vs</span>{" "}
-                    <span className="font-medium text-primary">Defender</span>{" "}
+                    <span className="font-medium text-primary">Defensor</span>{" "}
                     <span className="font-mono text-xs text-muted-foreground">
                       {battle.defenderCardId}
                     </span>
@@ -152,8 +138,10 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
                       handleResolve(battle, battle.challengerCardId)
                     }
                     disabled={resolvingId === battle.id}
+                    aria-busy={resolvingId === battle.id}
+                    className="transition-all duration-200"
                   >
-                    {resolvingId === battle.id ? "..." : "Challenger Wins"}
+                    {resolvingId === battle.id ? "Resolviendo…" : "Gana Retador"}
                   </Button>
                   <Button
                     size="sm"
@@ -162,8 +150,10 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
                       handleResolve(battle, battle.defenderCardId)
                     }
                     disabled={resolvingId === battle.id}
+                    aria-busy={resolvingId === battle.id}
+                    className="transition-all duration-200"
                   >
-                    {resolvingId === battle.id ? "..." : "Defender Wins"}
+                    {resolvingId === battle.id ? "Resolviendo…" : "Gana Defensor"}
                   </Button>
                 </div>
               </div>
@@ -174,12 +164,15 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
 
       {/* Finished section */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Finished ({finished.length})
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground">
+          Finalizadas ({finished.length})
         </h2>
 
         {finished.length === 0 && (
-          <p className="text-sm text-muted-foreground">No finished battles.</p>
+          <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-10 text-center">
+            <Clock className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            <p className="text-sm font-medium text-foreground">Sin batallas finalizadas</p>
+          </div>
         )}
 
         {finished.map((battle) => (
@@ -199,7 +192,7 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
                     )}
                   </p>
                 </div>
-                <Badge variant="secondary">finished</Badge>
+                <Badge variant="secondary">finalizada</Badge>
               </div>
             </CardContent>
           </Card>
@@ -212,11 +205,11 @@ export function BattleList({ initialBattles, total }: BattleListProps) {
 function mapResolveError(error: string): string {
   switch (error) {
     case "forbidden":
-      return "Streamer permissions required";
+      return "Se requieren permisos de streamer";
     case "not_found":
-      return "Battle or card not found";
+      return "Batalla o carta no encontrada";
     case "server_error":
     default:
-      return "Something went wrong";
+      return "Algo salió mal";
   }
 }

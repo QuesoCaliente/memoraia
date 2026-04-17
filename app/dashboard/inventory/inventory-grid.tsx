@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PackageOpen, Search, ImageOff } from "lucide-react";
 import { RARITIES, RARITY_CONFIG } from "@/lib/rarity";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,12 @@ interface InventoryGridProps {
 }
 
 type ActiveFilter = "all" | "active" | "inactive";
+
+const ACTIVE_FILTER_LABELS: Record<ActiveFilter, string> = {
+  all: "Todas",
+  active: "Activas",
+  inactive: "Inactivas",
+};
 
 function RarityBadge({ rarity }: { rarity: CardRarity }) {
   const config = RARITY_CONFIG[rarity];
@@ -58,6 +65,8 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const hasActiveFilters = selectedRarity !== "all" || activeFilter !== "all";
+
   function applyFilters(rarity: CardRarity | "all", active: ActiveFilter) {
     const filters: InventoryFilters = { limit: 20 };
     if (rarity !== "all") filters.rarity = rarity;
@@ -84,6 +93,13 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
     applyFilters(selectedRarity, value);
   }
 
+  function handleResetFilters() {
+    setSelectedRarity("all");
+    setActiveFilter("all");
+    setExpandedId(null);
+    applyFilters("all", "all");
+  }
+
   function toggleExpand(id: string) {
     setExpandedId((prev) => (prev === id ? null : id));
   }
@@ -98,10 +114,10 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
           disabled={isPending}
         >
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="All rarities" />
+            <SelectValue placeholder="Todas las rarezas" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All rarities</SelectItem>
+            <SelectItem value="all">Todas las rarezas</SelectItem>
             {RARITIES.map((r) => (
               <SelectItem key={r} value={r} className="capitalize">
                 {r}
@@ -119,17 +135,17 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
               variant="ghost"
               size="sm"
               className={cn(
-                "rounded-none capitalize",
+                "rounded-none",
                 activeFilter === option && "bg-muted text-foreground"
               )}
             >
-              {option}
+              {ACTIVE_FILTER_LABELS[option]}
             </Button>
           ))}
         </div>
 
         <span className="ml-auto text-xs text-muted-foreground">
-          {isPending ? "Loading…" : `${totalCount} cards`}
+          {isPending ? "Cargando…" : `${totalCount} cartas`}
         </span>
       </div>
 
@@ -145,11 +161,26 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
         </div>
       )}
 
-      {/* Empty state */}
-      {!isPending && cards.length === 0 && (
-        <div className="flex flex-col items-center gap-2 py-16">
-          <p className="text-sm text-muted-foreground">No cards found</p>
-          <p className="text-xs text-muted-foreground/60">Try adjusting your filters</p>
+      {/* Empty state — no cards at all */}
+      {!isPending && cards.length === 0 && !hasActiveFilters && (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <PackageOpen aria-hidden="true" className="h-10 w-10 text-muted-foreground/50" />
+          <h3 className="text-sm font-semibold text-foreground">No tenés cartas todavía</h3>
+          <p className="text-xs text-muted-foreground">Ganá cartas viendo streams</p>
+        </div>
+      )}
+
+      {/* Empty state — no filter match */}
+      {!isPending && cards.length === 0 && hasActiveFilters && (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <Search aria-hidden="true" className="h-10 w-10 text-muted-foreground/50" />
+          <h3 className="text-sm font-semibold text-foreground">Sin resultados</h3>
+          <p className="text-xs text-muted-foreground">
+            Ninguna carta coincide con los filtros aplicados.
+          </p>
+          <Button variant="outline" size="sm" onClick={handleResetFilters}>
+            Limpiar filtros
+          </Button>
         </div>
       )}
 
@@ -161,7 +192,7 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
               <button
                 onClick={() => toggleExpand(card.id)}
                 className={cn(
-                  "group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-border/70 hover:bg-card/80",
+                  "group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 hover:border-border/70 hover:bg-card/80",
                   !card.isActive && "opacity-50"
                 )}
               >
@@ -175,14 +206,14 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                      No img
+                    <div className="flex h-full w-full items-center justify-center text-muted-foreground/50">
+                      <ImageOff aria-hidden="true" className="h-6 w-6" />
                     </div>
                   )}
 
                   {/* Level badge — top left */}
                   <span className="absolute left-1.5 top-1.5 rounded bg-background/80 px-1.5 py-0.5 text-xs font-semibold text-foreground">
-                    Lv. {card.level}
+                    Nv. {card.level}
                   </span>
 
                   {/* Rarity badge — bottom right */}
@@ -216,17 +247,17 @@ export function InventoryGrid({ initialCards, total }: InventoryGridProps) {
                       </span>
                       <RarityBadge rarity={card.template.rarity as CardRarity} />
                     </div>
-                    <StatRow label="Level" value={card.level} />
+                    <StatRow label="Nivel" value={card.level} />
                     <StatRow label="XP" value={card.xp} />
-                    <StatRow label="Attack" value={card.attack} />
-                    <StatRow label="Defense" value={card.defense} />
-                    <StatRow label="Agility" value={card.agility} />
-                    <StatRow label="Obtained via" value={card.obtainedVia} />
+                    <StatRow label="Ataque" value={card.attack} />
+                    <StatRow label="Defensa" value={card.defense} />
+                    <StatRow label="Agilidad" value={card.agility} />
+                    <StatRow label="Obtenida vía" value={card.obtainedVia} />
                     <StatRow
-                      label="Obtained at"
-                      value={new Date(card.obtainedAt).toLocaleDateString()}
+                      label="Obtenida el"
+                      value={new Date(card.obtainedAt).toLocaleDateString("es-AR")}
                     />
-                    <StatRow label="Status" value={card.isActive ? "Active" : "Inactive"} />
+                    <StatRow label="Estado" value={card.isActive ? "Activa" : "Inactiva"} />
                   </CardContent>
                 </Card>
               )}

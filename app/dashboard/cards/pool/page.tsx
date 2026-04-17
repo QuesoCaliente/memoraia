@@ -8,9 +8,9 @@ export default async function PoolPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">Card Pool</h1>
+      <h1 className="text-2xl font-bold text-foreground">Pool de cartas</h1>
       <p className="text-sm text-muted-foreground">
-        Manage system cards in your channel. Toggle cards on/off and set custom drop weights.
+        Administrá las cartas del sistema en tu canal. Activá o desactivá cartas y configurá pesos de drop personalizados.
       </p>
       <PoolList initialEntries={pool.data} />
     </div>

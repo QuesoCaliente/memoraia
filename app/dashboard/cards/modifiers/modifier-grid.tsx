@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 import { RARITIES, RARITY_CONFIG } from "@/lib/rarity";
 
 const TIERS: SubscriptionTier[] = ["1000", "2000", "3000"];
@@ -49,8 +49,6 @@ export function ModifierGrid({ initialModifiers }: ModifierGridProps) {
   const [grid, setGrid] = useState<Grid>(() => buildGrid(initialModifiers));
   const original = useRef<Grid>(buildGrid(initialModifiers));
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   function handleChange(rarity: CardRarity, tier: SubscriptionTier, value: string) {
     const num = parseFloat(value);
@@ -64,8 +62,6 @@ export function ModifierGrid({ initialModifiers }: ModifierGridProps) {
   function handleReset() {
     setGrid(buildGrid(initialModifiers));
     original.current = buildGrid(initialModifiers);
-    setError(null);
-    setSuccess(false);
   }
 
   async function handleSave() {
@@ -80,13 +76,11 @@ export function ModifierGrid({ initialModifiers }: ModifierGridProps) {
     }
 
     if (changed.length === 0) {
-      setSuccess(false);
+      toast.info("No hay cambios para guardar");
       return;
     }
 
     setPending(true);
-    setError(null);
-    setSuccess(false);
 
     try {
       const result = await updateModifiers({ modifiers: changed });
@@ -95,14 +89,13 @@ export function ModifierGrid({ initialModifiers }: ModifierGridProps) {
           window.location.href = "/";
           return;
         }
-        setError("Failed to save modifiers. Please try again.");
+        toast.error("No se pudieron guardar los modificadores. Intentá de nuevo.");
         return;
       }
       const newGrid = buildGrid(result.data);
       setGrid(newGrid);
       original.current = newGrid;
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success("Modificadores guardados");
     } finally {
       setPending(false);
     }
@@ -112,10 +105,13 @@ export function ModifierGrid({ initialModifiers }: ModifierGridProps) {
     <div className="flex flex-col gap-4">
       <div className="rounded-xl border border-border overflow-hidden">
         <Table>
+          <caption className="sr-only">
+            Modificadores de peso de drop por rareza y tier de suscripción
+          </caption>
           <TableHeader>
             <TableRow>
               <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Rarity
+                Rareza
               </TableHead>
               {TIERS.map((tier) => (
                 <TableHead
@@ -154,26 +150,12 @@ export function ModifierGrid({ initialModifiers }: ModifierGridProps) {
         </Table>
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert>
-          <AlertDescription className="text-green-600 dark:text-green-400">
-            Modifiers saved successfully.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="flex items-center gap-3">
-        <Button onClick={handleSave} disabled={pending}>
-          {pending ? "Saving…" : "Save Changes"}
+        <Button onClick={handleSave} disabled={pending} aria-busy={pending}>
+          {pending ? "Guardando..." : "Guardar cambios"}
         </Button>
         <Button variant="outline" onClick={handleReset} disabled={pending}>
-          Reset
+          Restaurar
         </Button>
       </div>
     </div>

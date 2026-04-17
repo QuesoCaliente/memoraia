@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 interface CategoryFormProps {
   category?: CardCategory;
@@ -18,20 +18,19 @@ interface CategoryFormProps {
 function mapFormError(error: string): string {
   switch (error) {
     case "conflict":
-      return "A category with this name already exists";
+      return "Ya existe una categoría con ese nombre";
     case "forbidden":
-      return "Streamer permissions required";
+      return "Se requieren permisos de streamer";
     case "unauthorized":
-      return "Session expired. Please log in again.";
+      return "Sesión expirada. Volvé a iniciar sesión.";
     default:
-      return "Something went wrong. Please try again.";
+      return "Algo salió mal. Intentá de nuevo.";
   }
 }
 
 export function CategoryForm({ category, onSave, onCancel }: CategoryFormProps) {
   const [name, setName] = useState(category?.name ?? "");
   const [description, setDescription] = useState(category?.description ?? "");
-  const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
   const isEditing = !!category;
@@ -41,7 +40,6 @@ export function CategoryForm({ category, onSave, onCancel }: CategoryFormProps) 
     if (!name.trim()) return;
 
     setIsPending(true);
-    setError(null);
 
     try {
       const payload = {
@@ -58,8 +56,7 @@ export function CategoryForm({ category, onSave, onCancel }: CategoryFormProps) 
           window.location.href = "/";
           return;
         }
-        setError(mapFormError(result.error));
-        setTimeout(() => setError(null), 4000);
+        toast.error(mapFormError(result.error));
         return;
       }
 
@@ -78,44 +75,39 @@ export function CategoryForm({ category, onSave, onCancel }: CategoryFormProps) 
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor={`cat-name-${category?.id ?? "new"}`}>
-          Name <span className="text-destructive">*</span>
+          Nombre <span className="text-destructive">*</span>
         </Label>
         <Input
           id={`cat-name-${category?.id ?? "new"}`}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Category name"
+          placeholder="Nombre de la categoría"
           required
           disabled={isPending}
         />
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`cat-desc-${category?.id ?? "new"}`}>Description</Label>
+        <Label htmlFor={`cat-desc-${category?.id ?? "new"}`}>Descripción</Label>
         <Textarea
           id={`cat-desc-${category?.id ?? "new"}`}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional description"
+          placeholder="Descripción opcional"
           rows={2}
           disabled={isPending}
           className="resize-none"
         />
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       <div className="flex gap-2">
         <Button
           type="submit"
           disabled={isPending || !name.trim()}
+          aria-busy={isPending}
         >
-          {isPending ? "Saving..." : isEditing ? "Save Changes" : "Add Category"}
+          {isPending ? "Guardando..." : isEditing ? "Guardar cambios" : "Agregar categoría"}
         </Button>
         {onCancel && (
           <Button
@@ -124,7 +116,7 @@ export function CategoryForm({ category, onSave, onCancel }: CategoryFormProps) 
             onClick={onCancel}
             disabled={isPending}
           >
-            Cancel
+            Cancelar
           </Button>
         )}
       </div>

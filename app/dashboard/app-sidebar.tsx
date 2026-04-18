@@ -205,16 +205,9 @@ export function AppSidebar({ user }: { user: User }) {
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <form action={logout} className="w-full">
-                    <button
-                      type="submit"
-                      className="flex w-full items-center gap-2"
-                    >
-                      <LogOut className="size-4" />
-                      Cerrar sesión
-                    </button>
-                  </form>
+                <DropdownMenuItem onClick={() => logout()}>
+                  <LogOut className="size-4" />
+                  Cerrar sesión
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -12,18 +12,6 @@ export default function LoginPage() {
           Memor<span className="text-blue-400">AIA</span>
         </span>
 
-        <div className="hidden items-center gap-8 md:flex">
-          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-            Colección
-          </span>
-          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-            Ranking
-          </span>
-          <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-            Streamers
-          </span>
-        </div>
-
         <a
           href={`${apiUrl}/auth/twitch`}
           className="flex h-10 items-center gap-2 rounded-lg bg-[#9146FF] px-5 text-sm font-semibold text-white transition-all hover:bg-[#7c3aed] hover:shadow-lg hover:shadow-purple-500/20"

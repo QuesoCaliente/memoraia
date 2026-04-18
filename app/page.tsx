@@ -1,8 +1,12 @@
+import { MemoCardLoader } from "@/components/memo-card";
+
 export default function LoginPage() {
   const apiUrl = process.env.API_URL;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0a0b14]">
+      <MemoCardLoader />
+
       {/* Background glow */}
       <div className="pointer-events-none absolute top-1/4 left-1/2 h-[600px] w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600/8 blur-[120px]" />
 
@@ -42,45 +46,30 @@ export default function LoginPage() {
           </div>
 
           {/* Main card */}
-          <div className="relative z-10">
-            {/* Glow border */}
-            <div className="absolute -inset-px rounded-[20px] bg-gradient-to-b from-blue-500/30 via-blue-500/5 to-purple-500/20" />
-
-            <div className="relative flex w-[380px] flex-col rounded-[20px] border border-white/[0.08] bg-[#1a1a2e] p-5 shadow-2xl">
-              {/* Header — name + logo */}
-              <div className="flex items-center justify-between px-1 pb-3">
-                <h3 className="text-lg font-extrabold uppercase tracking-wide text-white">
-                  HuskyBot
-                </h3>
-                <span className="rounded bg-blue-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-blue-400">
-                  Husky
-                </span>
-              </div>
-
-              {/* Image */}
-              <div className="overflow-hidden rounded-xl">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://cdn.memoraia.org/huskybot.png"
-                  alt="HuskyBot"
-                  className="w-full object-contain"
-                />
-              </div>
-
-              {/* Description */}
-              <p className="mt-4 px-1 text-center text-xs leading-relaxed text-zinc-400">
-                Un husky insaciable que se alimenta de inteligencia artificial.
-                Cada modelo que devora lo hace más fuerte y más impredecible.
-              </p>
-
-              {/* ID badge */}
-              <div className="mt-4 flex justify-center">
-                <span className="rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-1 text-[11px] font-semibold text-zinc-400">
-                  #001
-                </span>
-              </div>
-            </div>
-          </div>
+          <memo-card
+            data-id="999"
+            data-name="HuskyBot"      
+            data-interactive=""
+            data-description="Un husky insaciable que se alimenta de inteligencia artificial. Cada modelo que devora lo hace más fuerte y más impredecible. Es un ser curioso y juguetón, pero también puede ser peligroso si se siente amenazado o si no se le da suficiente atención"
+            data-attack="75"
+            data-defense="40"
+            data-image="https://cdn.memoraia.org/huskybot.png"
+            data-category="kawaii"
+            data-level="5"
+            style={{
+              // @ts-expect-error -- CSS custom property for web component
+              "--size": "400px",
+              "--category-color": `linear-gradient(
+                153deg,
+                var(--gradient-stop-1) 0%,
+                var(--gradient-stop-2) 20%,
+                var(--gradient-stop-3) 41.86%,
+                var(--gradient-stop-4) 59.84%,
+                var(--gradient-stop-5) 75.37%,
+                var(--gradient-stop-6) 100%
+              )`,
+            }}
+          />
         </div>
 
       </main>

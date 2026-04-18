@@ -262,7 +262,7 @@ export default function OverlayPage({
   // ── Render ───────────────────────────────────────────────
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-transparent">
+    <div className="overlay-root relative h-screen w-screen overflow-hidden bg-transparent">
       {/* Channel update */}
       {channelUpdate && (
         <div className="animate-fade-in absolute top-8 left-1/2 -translate-x-1/2 rounded-xl border border-blue-500/30 bg-zinc-900/90 px-6 py-4 shadow-2xl backdrop-blur-sm">

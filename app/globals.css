@@ -125,6 +125,11 @@
   }
 }
 
+/* ── Overlay: transparent background for OBS browser source ── */
+body:has(.overlay-root) {
+  background: transparent !important;
+}
+
 /* ── Overlay animations (used by app/overlay/[key]) ─────────── */
 @keyframes fade-in {
   from {

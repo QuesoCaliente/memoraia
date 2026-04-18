@@ -84,28 +84,6 @@ export default function LoginPage() {
         </div>
 
       </main>
-
-      {/* ── Footer ───────────────────────────────────────────────── */}
-      <footer className="relative z-10 mt-24 flex flex-col items-center gap-4 border-t border-zinc-800/50 px-4 py-10">
-        <span className="text-sm font-bold text-white">
-          Memor<span className="text-blue-400">AIA</span>
-        </span>
-        <p className="max-w-sm text-center text-xs text-zinc-600">
-          © 2026 MemorAIA. Colecciona, fusiona y batalla con cartas de tus
-          streamers favoritos.
-        </p>
-        <div className="flex gap-6">
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 transition-colors hover:text-zinc-400">
-            Términos
-          </span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 transition-colors hover:text-zinc-400">
-            Privacidad
-          </span>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 transition-colors hover:text-zinc-400">
-            Soporte
-          </span>
-        </div>
-      </footer>
     </div>
   );
 }

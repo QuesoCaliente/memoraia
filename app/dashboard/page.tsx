@@ -160,7 +160,6 @@ export default async function DashboardPage() {
                       <div className="pt-2" id="overlay-panel">
                         <OverlayPanel
                           initialKey={overlay.overlayKey}
-                          initialUrl={overlay.overlayUrl}
                         />
                       </div>
                     )}

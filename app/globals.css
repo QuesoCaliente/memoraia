@@ -150,3 +150,31 @@
 .animate-card-drop {
   animation: card-drop 0.6s ease-out forwards;
 }
+
+@keyframes card-enter-queue {
+  0% { opacity: 0; transform: translateY(40px) scale(0.6); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-card-enter-queue {
+  animation: card-enter-queue 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes card-to-center {
+  0% { opacity: 0; transform: translateY(200px) scale(0.4); }
+  70% { opacity: 1; transform: translateY(-10px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-card-to-center {
+  animation: card-to-center 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes card-dismiss {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.8) translateY(-40px); }
+}
+
+.animate-card-dismiss {
+  animation: card-dismiss 0.3s ease-in forwards;
+}

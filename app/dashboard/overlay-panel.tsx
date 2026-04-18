@@ -27,12 +27,16 @@ import { toast } from "sonner";
 
 interface OverlayPanelProps {
   initialKey: string;
-  initialUrl: string;
 }
 
-export function OverlayPanel({ initialKey, initialUrl }: OverlayPanelProps) {
+function buildOverlayUrl(key: string) {
+  if (typeof window === "undefined") return "";
+  return `${window.location.origin}/overlay/${key}`;
+}
+
+export function OverlayPanel({ initialKey }: OverlayPanelProps) {
   const [overlayKey, setOverlayKey] = useState(initialKey);
-  const [overlayUrl, setOverlayUrl] = useState(initialUrl);
+  const [overlayUrl, setOverlayUrl] = useState(() => buildOverlayUrl(initialKey));
   const [copied, setCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -50,7 +54,7 @@ export function OverlayPanel({ initialKey, initialUrl }: OverlayPanelProps) {
       const result = await regenerateOverlayKey();
       if (result.ok) {
         setOverlayKey(result.data.overlayKey);
-        setOverlayUrl(result.data.overlayUrl);
+        setOverlayUrl(buildOverlayUrl(result.data.overlayKey));
         toast.success("Key regenerada exitosamente");
       } else if (result.error === "unauthorized") {
         globalThis.location.href = "/";

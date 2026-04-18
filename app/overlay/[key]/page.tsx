@@ -301,7 +301,7 @@ export default function OverlayPage({
       {/* Centered / revealed card */}
       {centeredCard && (
         <div
-          className="animate-card-drop absolute left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
+          className="animate-card-to-center absolute left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center"
           onClick={() =>
             centeredCard.status === "centered"
               ? handleCenteredClick(centeredCard.queueId)
@@ -317,7 +317,8 @@ export default function OverlayPage({
             data-level={String(centeredCard.card.level)}
             data-attack={String(centeredCard.card.attack)}
             data-defense={String(centeredCard.card.defense)}
-            data-flipped={centeredCard.status === "revealed" ? "" : undefined}
+            data-flipped={centeredCard.status !== "revealed" ? "" : undefined}
+            data-interactive={centeredCard.status === "centered" ? "" : undefined}
             style={{
               // @ts-expect-error -- CSS custom property for web component
               "--size": "300px",
@@ -340,7 +341,7 @@ export default function OverlayPage({
           {visibleQueue.map((card) => (
             <div
               key={card.queueId}
-              className="cursor-pointer transition-transform hover:scale-105"
+              className="animate-card-enter-queue cursor-pointer transition-transform hover:scale-105"
               onClick={() => handleQueueClick(card.queueId)}
             >
               <memo-card
@@ -351,6 +352,7 @@ export default function OverlayPage({
                 data-level={String(card.card.level)}
                 data-attack={String(card.card.attack)}
                 data-defense={String(card.card.defense)}
+                data-flipped=""
                 style={{
                   // @ts-expect-error -- CSS custom property for web component
                   "--size": "120px",
